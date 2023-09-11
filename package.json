@@ -1,5 +1,5 @@
 {
-	"name": "your-module-name",
+	"name": "birdog-cloud",
 	"version": "0.1.0",
 	"main": "main.js",
 	"scripts": {
@@ -8,13 +8,13 @@
 	"license": "MIT",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/bitfocus/companion-module-your-module-name.git"
+		"url": "git+https://github.com/bitfocus/companion-module-birddog-cloud.git"
 	},
 	"dependencies": {
-		"@companion-module/base": "~1.4.0"
+		"@companion-module/base": "~1.5.0"
 	},
 	"devDependencies": {
-		"@companion-module/tools": "^1.2.0"
+		"@companion-module/tools": "^1.4.0"
 	},
 	"prettier": "@companion-module/tools/.prettierrc.json"
 }
