@@ -1,16 +1,15 @@
 {
-	"id": "your-module-name",
-	"name": "your-module-name",
-	"shortname": "module-shortname",
-	"description": "A short one line description of your module",
+	"id": "birddog-cloud",
+	"name": "birddog-cloud",
+	"shortname": "BirdDog Cloud",
+	"description": "This Module controls BirdDog Cloud",
 	"version": "0.0.0",
 	"license": "MIT",
-	"repository": "git+https://github.com/bitfocus/companion-module-your-module-name.git",
-	"bugs": "https://github.com/bitfocus/companion-module-your-module-name/issues",
+	"repository": "git+https://github.com/bitfocus/companion-module-birddog-cloud.git",
+	"bugs": "https://github.com/bitfocus/companion-module-birddog-cloud/issues",
 	"maintainers": [
 		{
-			"name": "Your name",
-			"email": "Your email"
+			"name": "Jamie McConchie",
 		}
 	],
 	"runtime": {
@@ -20,7 +19,7 @@
 		"entrypoint": "../main.js"
 	},
 	"legacyIds": [],
-	"manufacturer": "Your company",
-	"products": ["Your product"],
-	"keywords": []
+	"manufacturer": "BirdDog",
+	"products": ["Cloud"],
+	"keywords": ["BirdDog","Cloud'"]
 }
