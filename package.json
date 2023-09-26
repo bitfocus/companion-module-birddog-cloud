@@ -1,20 +1,23 @@
 {
-	"name": "birdog-cloud",
-	"version": "0.1.0",
+	"name": "birddog-cloud",
+	"version": "1.0.0",
 	"main": "main.js",
 	"scripts": {
 		"format": "prettier -w ."
 	},
 	"license": "MIT",
+	"type": "module",
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/bitfocus/companion-module-birddog-cloud.git"
 	},
 	"dependencies": {
-		"@companion-module/base": "~1.5.0"
+		"@companion-module/base": "~1.5.0",
+		"node-fetch": "^3.3.2",
+		"socketcluster-client": "^18.2.2"
 	},
 	"devDependencies": {
-		"@companion-module/tools": "^1.4.0"
+		"@companion-module/tools": "^1.4.1"
 	},
 	"prettier": "@companion-module/tools/.prettierrc.json"
 }
