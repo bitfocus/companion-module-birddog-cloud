@@ -5,7 +5,7 @@ export function getActions() {
 		{ id: 'STOP', label: 'Stop' },
 	]
 	return {
-		connectionStarted: {
+		connectionToggle: {
 			name: 'Start/Stop Connection',
 			options: [
 				{

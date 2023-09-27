@@ -4,6 +4,7 @@ export function getFeedbacks() {
 	const feedbacks = {}
 
 	const ColorWhite = combineRgb(255, 255, 255)
+	const ColorGray = combineRgb(110, 110, 110)
 	const ColorBlack = combineRgb(0, 0, 0)
 	const ColorRed = combineRgb(200, 0, 0)
 	const ColorGreen = combineRgb(0, 200, 0)
@@ -13,13 +14,13 @@ export function getFeedbacks() {
 		CONNECTED: ColorGreen,
 		CONNECTING: ColorOrange,
 		FAILED: ColorRed,
-		STOPPED: ColorBlack,
+		STOPPED: ColorGray,
 	}
 
 	feedbacks['connectionStarted'] = {
 		type: 'boolean',
 		name: 'Connection Connected',
-		description: 'Change style if a connection is active',
+		description: 'Change style if a connection is connected',
 		defaultStyle: {
 			bgcolor: ColorGreen,
 		},
@@ -44,7 +45,7 @@ export function getFeedbacks() {
 	feedbacks['connectionStatus'] = {
 		type: 'advanced',
 		name: 'Connection Status',
-		description: 'Change style if a connection is active',
+		description: 'Change background color based on connection status',
 		options: [
 			{
 				type: 'dropdown',
@@ -57,6 +58,31 @@ export function getFeedbacks() {
 			let connection = this.states.connections.find(({ id }) => id === feedback.options.connection)
 			console.log(connection)
 			return { bgcolor: connectionColors[`${connection.state}`] }
+		},
+	}
+
+	feedbacks['endpointOnline'] = {
+		type: 'boolean',
+		name: 'Endpoint Online',
+		description: 'Change style if an endpoint is online',
+		defaultStyle: {
+			bgcolor: ColorGreen,
+		},
+		options: [
+			{
+				type: 'dropdown',
+				label: 'Endpoints',
+				id: 'endpoint',
+				choices: this.endpointList,
+			},
+		],
+		callback: (feedback) => {
+			let endpoint = this.states.endpoints.find(({ id }) => id === feedback.options.endpoint)
+			if (endpoint) {
+				return endpoint.online
+			} else {
+				return false
+			}
 		},
 	}
 

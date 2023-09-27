@@ -1,6 +1,6 @@
 import { InstanceBase, Regex, runEntrypoint, InstanceStatus } from '@companion-module/base'
 import { getActions } from './actions.js'
-//import { getPresets } from './presets.js'
+import { getPresets } from './presets.js'
 import { getVariables } from './variables.js'
 import { getFeedbacks } from './feedbacks.js'
 import { upgradeScripts } from './upgrades.js'
@@ -26,7 +26,6 @@ class BirdDogCloudInstance extends InstanceBase {
 				delete this.auth[name]
 			},
 			loadToken: function (name) {
-				console.log('here')
 				return Promise.resolve(this.auth[name])
 			},
 		}
@@ -216,6 +215,13 @@ class BirdDogCloudInstance extends InstanceBase {
 			}
 		})()
 		;(async () => {
+			let channel = this.socket.subscribe(`/endpoints/${this.cloud.companyId}`)
+			for await (let message of channel) {
+				console.log(message)
+				this.processChannelUpdate(message.msg, 'endpoints', message)
+			}
+		})()
+		;(async () => {
 			while (this.socket) {
 				for await (let event of this.socket.listener('message')) {
 					//console.log(event)
@@ -241,6 +247,7 @@ class BirdDogCloudInstance extends InstanceBase {
 	channelInit(channel, data) {
 		this.states[`${channel}`] = data
 		this.setupConnections()
+		this.setupEndpoints()
 	}
 
 	channelAdd(channel, data) {
@@ -272,6 +279,7 @@ class BirdDogCloudInstance extends InstanceBase {
 
 		this.initVariables() //temp
 		this.checkFeedbacks()
+		this.setupEndpoints()
 	}
 
 	startPoll() {
@@ -365,6 +373,23 @@ class BirdDogCloudInstance extends InstanceBase {
 		this.initFeedbacks()
 		this.initVariables()
 		this.checkFeedbacks()
+		this.initPresets()
+	}
+
+	setupEndpoints() {
+		this.endpointList = []
+		this.states.endpoints.forEach((endpoint) => {
+			let id = endpoint.id
+			let name = endpoint.name
+
+			this.endpointList.push({ id: id, label: name })
+			this.setVariableValues({ [`${name}_status`]: endpoint.online ? 'Connected' : 'Offline' })
+		})
+		this.initActions()
+		this.initFeedbacks()
+		this.initVariables()
+		this.checkFeedbacks()
+		this.initPresets()
 	}
 }
 

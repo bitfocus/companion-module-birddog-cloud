@@ -26,5 +26,16 @@ export function getVariables() {
 			this.setVariableValues({ [`${name}_status`]: connectionStates[`${connection.state}`] })
 		})
 	}
+
+	if (this.states.endpoints) {
+		this.states.endpoints.forEach((endpoint) => {
+			let name = endpoint.name
+			variables.push({
+				name: `${name} - Endpoint Status`,
+				variableId: `${name}_status`,
+			})
+			this.setVariableValues({ [`${name}_status`]: endpoint.online ? 'Connected' : 'Offline' })
+		})
+	}
 	return variables
 }
