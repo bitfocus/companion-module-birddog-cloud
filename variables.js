@@ -20,10 +20,10 @@ export function getVariables() {
 			}
 			name = name.replace(/[\W]/gi, '_')
 			variables.push({
-				name: `${name} - Connection Status`,
-				variableId: `${name}_status`,
+				name: `Connection Status - ${name}`,
+				variableId: `connection_status_${name}`,
 			})
-			this.setVariableValues({ [`${name}_status`]: connectionStates[`${connection.state}`] })
+			this.setVariableValues({ [`connection_status_${name}`]: connectionStates[`${connection.state}`] })
 		})
 	}
 
@@ -31,10 +31,10 @@ export function getVariables() {
 		this.states.endpoints.forEach((endpoint) => {
 			let name = endpoint.name
 			variables.push({
-				name: `${name} - Endpoint Status`,
-				variableId: `${name}_status`,
+				name: `Endpoint Status - ${name}`,
+				variableId: `endpoint_status_${name}`,
 			})
-			this.setVariableValues({ [`${name}_status`]: endpoint.online ? 'Connected' : 'Offline' })
+			this.setVariableValues({ [`endpoint_status_${name}`]: endpoint.online ? 'Connected' : 'Offline' })
 		})
 	}
 	return variables

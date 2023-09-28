@@ -91,16 +91,18 @@ class BirdDogCloudInstance extends InstanceBase {
 				if (text) {
 					let parsedToken = JSON.parse(Buffer.from(text.split('.')[1], 'base64').toString())
 
-					this.cloud.refreshToken = text
-					this.cloud.refreshTokenExp = parsedToken?.exp
-					this.cloud.companyId = parsedToken.cid
+					if (parsedToken) {
+						this.cloud.refreshToken = text
+						this.cloud.refreshTokenExp = parsedToken?.exp
+						this.cloud.companyId = parsedToken.cid
 
-					this.log('info', 'Connected to BirdDog Cloud')
-					this.updateStatus(InstanceStatus.Ok)
+						this.log('info', 'Connected to BirdDog Cloud')
+						this.updateStatus(InstanceStatus.Ok)
 
-					this.startPoll()
-					this.getCloudInfo()
-					this.startWebsocket()
+						this.startPoll()
+						this.getCloudInfo()
+						this.startWebsocket()
+					}
 				}
 			})
 			.catch((error) => {
@@ -217,7 +219,6 @@ class BirdDogCloudInstance extends InstanceBase {
 		;(async () => {
 			let channel = this.socket.subscribe(`/endpoints/${this.cloud.companyId}`)
 			for await (let message of channel) {
-				console.log(message)
 				this.processChannelUpdate(message.msg, 'endpoints', message)
 			}
 		})()
@@ -270,7 +271,7 @@ class BirdDogCloudInstance extends InstanceBase {
 	}
 
 	channelUpdate(channel, data) {
-		console.log(data)
+		//console.log(data)
 		let arr = this.states[`${channel}`]
 		if (!arr) return
 		let index = arr.findIndex((el) => el.id === data.id)
@@ -284,9 +285,12 @@ class BirdDogCloudInstance extends InstanceBase {
 
 	startPoll() {
 		//Token expires every 24hrs
-		this.tokenReAuth = setInterval(() => {
-			this.initConnection()
-		}, 24 * 60 * 60 * 1000)
+		this.tokenReAuth = setInterval(
+			() => {
+				this.initConnection()
+			},
+			24 * 60 * 60 * 1000,
+		)
 	}
 
 	stopPoll() {
@@ -297,11 +301,12 @@ class BirdDogCloudInstance extends InstanceBase {
 	}
 
 	getCloudInfo() {
+		this.sendCommand('company/endpoints', 'get')
+		this.sendCommand('connections', 'get')
+
 		//this.sendCommand('company', 'get')
 		//this.sendCommand('company/encoders', 'get')
-		//this.sendCommand('company/endpoints', 'get')
 		//this.sendCommand('company/recorders', 'get')
-		this.sendCommand('connections', 'get')
 		//this.sendCommand('company/recordings', 'get')
 	}
 
@@ -342,6 +347,8 @@ class BirdDogCloudInstance extends InstanceBase {
 
 	processData(cmd, data) {
 		if (cmd.match('company/endpoints')) {
+			this.states.endpoints = data
+			this.setupEndpoints()
 		} else if (cmd.match('connections')) {
 			this.states.connections = data
 			this.setupConnections()
@@ -367,7 +374,9 @@ class BirdDogCloudInstance extends InstanceBase {
 				}
 			}
 			this.connectionList.push({ id: id, label: name })
-			this.setVariableValues({ [`${name}_status`]: connection.state === 'CONNECTED' ? 'Connected' : 'Stopped' })
+			this.setVariableValues({
+				[`connection_status_${name}`]: connection.state === 'CONNECTED' ? 'Connected' : 'Stopped',
+			})
 		})
 		this.initActions()
 		this.initFeedbacks()
@@ -383,7 +392,7 @@ class BirdDogCloudInstance extends InstanceBase {
 			let name = endpoint.name
 
 			this.endpointList.push({ id: id, label: name })
-			this.setVariableValues({ [`${name}_status`]: endpoint.online ? 'Connected' : 'Offline' })
+			this.setVariableValues({ [`endpoint_status_${name}`]: endpoint.online ? 'Connected' : 'Offline' })
 		})
 		this.initActions()
 		this.initFeedbacks()

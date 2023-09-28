@@ -19,7 +19,7 @@ export function getPresets() {
 				name: `Endpoint ${name} Status`,
 				options: {},
 				style: {
-					text: `${name}\\n\\n$(birddog-cloud:${name}_status)`,
+					text: `${name}\\n\\n$(birddog-cloud:endpoint_status_${name})`,
 					size: '7',
 					color: ColorWhite,
 					bgcolor: ColorBlack,

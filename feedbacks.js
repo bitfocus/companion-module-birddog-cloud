@@ -56,7 +56,6 @@ export function getFeedbacks() {
 		],
 		callback: (feedback) => {
 			let connection = this.states.connections.find(({ id }) => id === feedback.options.connection)
-			console.log(connection)
 			return { bgcolor: connectionColors[`${connection.state}`] }
 		},
 	}
