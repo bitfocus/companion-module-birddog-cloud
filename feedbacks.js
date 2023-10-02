@@ -33,7 +33,7 @@ export function getFeedbacks() {
 			},
 		],
 		callback: (feedback) => {
-			let connection = this.states.connections.find(({ id }) => id === feedback.options.connection)
+			let connection = this.states.connections?.find(({ id }) => id === feedback.options.connection)
 			if (connection) {
 				return connection.state === 'CONNECTED' ? true : false
 			} else {
@@ -55,7 +55,7 @@ export function getFeedbacks() {
 			},
 		],
 		callback: (feedback) => {
-			let connection = this.states.connections.find(({ id }) => id === feedback.options.connection)
+			let connection = this.states.connections?.find(({ id }) => id === feedback.options.connection)
 			return { bgcolor: connectionColors[`${connection.state}`] }
 		},
 	}
@@ -76,7 +76,7 @@ export function getFeedbacks() {
 			},
 		],
 		callback: (feedback) => {
-			let endpoint = this.states.endpoints.find(({ id }) => id === feedback.options.endpoint)
+			let endpoint = this.states.endpoints?.find(({ id }) => id === feedback.options.endpoint)
 			if (endpoint) {
 				return endpoint.online
 			} else {

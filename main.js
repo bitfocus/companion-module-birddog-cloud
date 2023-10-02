@@ -360,6 +360,8 @@ class BirdDogCloudInstance extends InstanceBase {
 
 	setupConnections() {
 		this.connectionList = []
+		this.presenterList = []
+
 		this.states.connections.forEach((connection) => {
 			let id = connection.id
 			let name = connection.id
@@ -373,6 +375,13 @@ class BirdDogCloudInstance extends InstanceBase {
 						: connection.parameters.videoSources[0]
 				}
 			}
+
+			if (connection.parameters.multiView) {
+				if (connection.parameters.multiView.layout.match('PRESENTER_')) {
+					this.presenterList.push({ id: id, label: name })
+				}
+			}
+
 			this.connectionList.push({ id: id, label: name })
 			this.setVariableValues({
 				[`connection_status_${name}`]: connection.state === 'CONNECTED' ? 'Connected' : 'Stopped',
@@ -399,6 +408,24 @@ class BirdDogCloudInstance extends InstanceBase {
 		this.initVariables()
 		this.checkFeedbacks()
 		this.initPresets()
+	}
+
+	async sendPresenterCommand(sourceId, connectionId, command, field, value) {
+		;(async () => {
+			let result
+			let object = {
+				sourceId: sourceId,
+				connectionId: connectionId,
+				[`${field}`]: value,
+			}
+			console.log(object)
+			try {
+				result = await this.socket.invoke(command, object)
+				console.log(result)
+			} catch (error) {
+				console.log(error)
+			}
+		})()
 	}
 }
 
