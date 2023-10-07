@@ -12,21 +12,9 @@ export function getVariables() {
 		this.states.connections.forEach((connection) => {
 			let id = connection.id
 			let name = connection.id
-			if (connection.parameters.displayName) {
-				name = connection.parameters.displayName
-			} else {
-				if (connection.parameters.connectionType === 'MULTI_VIEW') {
-					let sourceCount = connection.parameters.videoSources.length ? connection.parameters.videoSources.length : ''
-					name = `MV ${sourceCount}`
-				} else {
-					if (connection.parameters.videoSources[0]) {
-						name = connection.parameters.videoSources[0].name
-							? connection.parameters.videoSources[0].name
-							: connection.parameters.videoSources[0]
-					}
-				}
-			}
+			name = this.getConnectionDisplayName(connection)
 			name = name.replace(/[\W]/gi, '_')
+
 			variables.push({
 				name: `Connection Status - ${name}`,
 				variableId: `connection_status_${name}`,

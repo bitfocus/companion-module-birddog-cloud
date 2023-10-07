@@ -244,6 +244,7 @@ class BirdDogCloudInstance extends InstanceBase {
 
 	channelInit(channel, data) {
 		this.states[`${channel}`] = data
+
 		this.setupConnections()
 		this.setupEndpoints()
 	}
@@ -297,7 +298,7 @@ class BirdDogCloudInstance extends InstanceBase {
 		this.sendCommand('company/endpoints', 'get')
 		this.sendCommand('connections', 'get')
 		this.sendCommand('company/recorders', 'get')
-		this.sendCommand('recordings', 'get')
+		//this.sendCommand('recordings', 'get')
 		//this.sendCommand('company', 'get')
 		//this.sendCommand('company/encoders', 'get')
 		//this.sendCommand('company/recordings', 'get')
@@ -358,6 +359,23 @@ class BirdDogCloudInstance extends InstanceBase {
 		}
 	}
 
+	getConnectionDisplayName(connection) {
+		if (connection.parameters.displayName) {
+			return connection.parameters.displayName
+		} else {
+			if (connection.parameters.connectionType === 'MULTI_VIEW') {
+				let sourceCount = connection.parameters.videoSources.length ? connection.parameters.videoSources.length : ''
+				return `MV ${sourceCount}`
+			} else {
+				if (connection.parameters.videoSources[0]) {
+					return connection.parameters.videoSources[0].name
+						? connection.parameters.videoSources[0].name
+						: connection.parameters.videoSources[0]
+				}
+			}
+		}
+	}
+
 	setupConnections() {
 		this.connectionList = []
 		this.presenterList = []
@@ -365,21 +383,7 @@ class BirdDogCloudInstance extends InstanceBase {
 		this.states.connections.forEach((connection) => {
 			let id = connection.id
 			let name = connection.id
-
-			if (connection.parameters.displayName) {
-				name = connection.parameters.displayName
-			} else {
-				if (connection.parameters.connectionType === 'MULTI_VIEW') {
-					let sourceCount = connection.parameters.videoSources.length ? connection.parameters.videoSources.length : ''
-					name = `MV ${sourceCount}`
-				} else {
-					if (connection.parameters.videoSources[0]) {
-						name = connection.parameters.videoSources[0].name
-							? connection.parameters.videoSources[0].name
-							: connection.parameters.videoSources[0]
-					}
-				}
-			}
+			name = this.getConnectionDisplayName(connection)
 
 			if (connection.parameters.multiView) {
 				if (connection.parameters.multiView.layout.match('PRESENTER_')) {
@@ -429,13 +433,8 @@ class BirdDogCloudInstance extends InstanceBase {
 			let name = recorder.name
 
 			this.recorderList.push({ id: id, label: name })
-			//this.setVariableValues({ [`endpoint_status_${name}`]: endpoint.online ? 'Connected' : 'Offline' })
 		})
-		//this.initActions()
-		this.initFeedbacks()
-		this.initVariables()
-		this.checkFeedbacks()
-		this.initPresets()
+		this.sendCommand('recordings', 'get')
 	}
 
 	setupRecordings() {
@@ -444,13 +443,12 @@ class BirdDogCloudInstance extends InstanceBase {
 			let id = recording.id
 			let name = recording.parameters.input
 			let recorder = this.states.recorders.find(({ id }) => id === recording.recorderId)
-			console.log(recorder)
+
 			if (recorder) {
-				name = recorder.name + '-' + name
+				name = `${recorder.name}-${name}`
 			}
 
 			this.recordingsList.push({ id: id, label: name })
-			//this.setVariableValues({ [`endpoint_status_${name}`]: endpoint.online ? 'Connected' : 'Offline' })
 		})
 
 		this.initActions()
