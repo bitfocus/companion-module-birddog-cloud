@@ -12,9 +12,9 @@
 		"url": "git+https://github.com/bitfocus/companion-module-birddog-cloud.git"
 	},
 	"dependencies": {
-		"@companion-module/base": "~1.5.0",
+		"@companion-module/base": "~1.5.1",
 		"node-fetch": "^3.3.2",
-		"socketcluster-client": "^18.2.2"
+		"socketcluster-client": "^18.3.0"
 	},
 	"devDependencies": {
 		"@companion-module/tools": "^1.4.1"

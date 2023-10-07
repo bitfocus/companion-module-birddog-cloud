@@ -10,8 +10,9 @@ export function getActions() {
 		{ id: 'setFullscreenVideo', label: 'Video Source Fullscreen' },
 		{ id: 'setMixed', label: 'Mix Sources' },
 	]
+
 	return {
-		connectionToggle: {
+		connectionControl: {
 			name: 'Start/Stop Connection',
 			options: [
 				{
@@ -42,8 +43,8 @@ export function getActions() {
 				this.sendCommand(`connection/action`, 'POST', { id: action.options.connection, action: state })
 			},
 		},
-		presenterToggle: {
-			name: 'Presenter Control Layout',
+		presenterLayout: {
+			name: 'Set Presenter Control Layout',
 			options: [
 				{
 					type: 'dropdown',
@@ -57,24 +58,94 @@ export function getActions() {
 					label: 'Layout',
 					id: 'layout',
 					choices: presenterViewOptions,
-					default: 'setFullscreen',
-				},
-				{
-					type: 'dropdown',
-					label: 'Connections',
-					id: 'source',
-					choices: this.connectionList,
-					default: this.connectionList[0]?.id,
+					default: 'setFullscreenMain',
 				},
 			],
 			callback: (action) => {
 				let connection = this.states.connections.find(({ id }) => id === action.options.connection)
-				let source = this.states.connections.find(({ id }) => id === action.options.source)
 
 				let layout = action.options.layout === 'setMixed' ? 'setMixed' : 'setFullscreen'
-				let sourceName = source.parameters.displayName
-				console.log(source)
+
+				let sourceName
+				if (action.options.layout === 'setMixed' || action.options.layout === 'setFullscreenVideo') {
+					sourceName = connection.parameters.multiView.firstVideoSource
+				} else {
+					sourceName = connection.parameters.multiView.mainSource
+				}
+
 				this.sendPresenterCommand(connection.sourceId, connection.id, layout, 'sourceName', sourceName)
+			},
+		},
+		presenterAudioDevice: {
+			name: 'Set Presenter Audio Device',
+			options: [
+				{
+					type: 'dropdown',
+					label: 'Presenter Connection',
+					id: 'connection',
+					choices: this.presenterList,
+					default: this.presenterList[0]?.id,
+				},
+				{
+					type: 'dropdown',
+					label: 'Audio Device',
+					id: 'audio',
+					choices: this.audioDevices,
+					default: this.audioDevices[0]?.id,
+				},
+			],
+			callback: (action) => {
+				let connection = this.states.connections.find(({ id }) => id === action.options.connection)
+
+				this.sendPresenterCommand(
+					connection.sourceId,
+					connection.id,
+					'setAudioReceiver',
+					'deviceName',
+					action.options.audio
+				)
+			},
+		},
+		recordingControl: {
+			name: 'Start/Stop Recordings',
+			options: [
+				{
+					type: 'multidropdown',
+					label: 'Recordings',
+					id: 'recordings',
+					choices: this.recordingsList,
+					default: this.recordingsList?.[0]?.id,
+				},
+				{
+					type: 'dropdown',
+					label: 'Action',
+					id: 'command',
+					choices: [
+						{ id: 'START', label: 'Start' },
+						{ id: 'STOP', label: 'Stop' },
+					],
+					default: 'START',
+				},
+			],
+			callback: (action) => {
+				let field
+				let recordings
+				let state
+
+				if (action.options.recordings.length > 1) {
+					field = 'ids'
+					recordings = action.options.recordings
+					state = action.options.command === 'START' ? 'START_MULTIPLE' : 'STOP_MULTIPLE'
+				} else {
+					field = 'id'
+					recordings = action.options.recordings[0]
+					state = action.options.command
+				}
+
+				this.sendCommand(`recording/action`, 'POST', {
+					[`${field}`]: recordings,
+					action: state,
+				})
 			},
 		},
 	}

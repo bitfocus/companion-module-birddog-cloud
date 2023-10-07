@@ -15,8 +15,16 @@ export function getVariables() {
 			if (connection.parameters.displayName) {
 				name = connection.parameters.displayName
 			} else {
-				//console.log(connection.parameters.videoSources[0])
-				//name = connection.parameters.videoSources[0].toString()
+				if (connection.parameters.connectionType === 'MULTI_VIEW') {
+					let sourceCount = connection.parameters.videoSources.length ? connection.parameters.videoSources.length : ''
+					name = `MV ${sourceCount}`
+				} else {
+					if (connection.parameters.videoSources[0]) {
+						name = connection.parameters.videoSources[0].name
+							? connection.parameters.videoSources[0].name
+							: connection.parameters.videoSources[0]
+					}
+				}
 			}
 			name = name.replace(/[\W]/gi, '_')
 			variables.push({

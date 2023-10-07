@@ -7,10 +7,10 @@
   resolved "https://registry.yarnpkg.com/@aashutoshrathi/word-wrap/-/word-wrap-1.2.6.tgz#bd9154aec9983f77b3a034ecaa015c2e4201f6cf"
   integrity sha512-1Yjs2SvM8TflER/OD3cOjhWWOZb58A2t7wpE2S9XfBYTiIl+XFhQG2bjy4Pu1I+EAlCNUzRDYDdFwFYUKvXcIA==
 
-"@companion-module/base@~1.5.0":
-  version "1.5.0"
-  resolved "https://registry.yarnpkg.com/@companion-module/base/-/base-1.5.0.tgz#031f5494e54a9c45441cea49f25a122dd0e9d573"
-  integrity sha512-pbct4ZDV4lmPwiTod6cff64v1sKEW+6XVJn2KR0ClER1yCJRom8ih5V4GNa0O83FPDbeQPiwj0wyIl4To98m1w==
+"@companion-module/base@~1.5.1":
+  version "1.5.1"
+  resolved "https://registry.yarnpkg.com/@companion-module/base/-/base-1.5.1.tgz#20612ba8adbe04ed2220ded9acb99c4cd877c304"
+  integrity sha512-gpUtE7121CuPJkZMEoqh1GU6QwDoqmj4WvjI/fqyeTrqejKcKz/oSgMxSMeh7T1Gf02a5OOTpJ+aYWBlNB0BKw==
   dependencies:
     "@sentry/node" "^7.63.0"
     "@sentry/tracing" "^7.63.0"
@@ -1952,10 +1952,10 @@ slash@^4.0.0:
   resolved "https://registry.yarnpkg.com/slash/-/slash-4.0.0.tgz#2422372176c4c6c5addb5e2ada885af984b396a7"
   integrity sha512-3dOsAHXXUkQTpOYcoAxLIorMTp4gIQr5IW3iVb7A7lFIp0VHhnynm9izx6TssdrIcVIESAlVjtnO2K8bg+Coew==
 
-socketcluster-client@^18.2.2:
-  version "18.2.2"
-  resolved "https://registry.yarnpkg.com/socketcluster-client/-/socketcluster-client-18.2.2.tgz#f4797aee8d92a50bc8bf84d84e6813d9b8e9a9d5"
-  integrity sha512-xKr5idsagxOHZJdlK1GzkpWxrjTXHGA+PNQVjlEABudseZG1kVxituJO68HlvxKUM/aIYRJvDNZe5Bw7zvgxVg==
+socketcluster-client@^18.3.0:
+  version "18.3.0"
+  resolved "https://registry.yarnpkg.com/socketcluster-client/-/socketcluster-client-18.3.0.tgz#745af3442e56ab9fd79a26cca2105d267fcfb5be"
+  integrity sha512-C56cxxzv9Un+nGcwV5fMxUeojbWJp2FzPk00lh6mZMLh5wsfvHYzqYqQtoaL7JvMliNsx/8UYH4bIQn+YRWtSw==
   dependencies:
     ag-channel "^5.0.0"
     ag-request "^1.0.1"

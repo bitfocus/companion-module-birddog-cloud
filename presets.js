@@ -58,7 +58,21 @@ export function getPresets() {
 	if (this.states.connections) {
 		this.states.connections.forEach((connection) => {
 			let id = connection.id
-			let name = connection.parameters.displayName ? connection.parameters.displayName : connection.id
+			let name = connection.id
+			if (connection.parameters.displayName) {
+				name = connection.parameters.displayName
+			} else {
+				if (connection.parameters.connectionType === 'MULTI_VIEW') {
+					let sourceCount = connection.parameters.videoSources.length ? connection.parameters.videoSources.length : ''
+					name = `MV ${sourceCount}`
+				} else {
+					if (connection.parameters.videoSources[0]) {
+						name = connection.parameters.videoSources[0].name
+							? connection.parameters.videoSources[0].name
+							: connection.parameters.videoSources[0]
+					}
+				}
+			}
 			presets[`connection_${name}_toggle`] = {
 				type: 'button',
 				category: 'Connections',
@@ -74,7 +88,7 @@ export function getPresets() {
 					{
 						down: [
 							{
-								actionId: 'connectionToggle',
+								actionId: 'connectionControl',
 								options: {
 									connection: id,
 									command: 'TOGGLE',
@@ -93,6 +107,41 @@ export function getPresets() {
 						style: {},
 					},
 				],
+			}
+		})
+	}
+
+	if (this.states.recordings) {
+		this.states.recordings.forEach((recording) => {
+			let id = recording.id
+			let name = recording.parameters.input
+
+			presets[`recording_${name}_start`] = {
+				type: 'button',
+				category: 'Recordings',
+				name: `Start ${name}`,
+				options: {},
+				style: {
+					text: `START\\n${name}`,
+					size: '7',
+					color: ColorWhite,
+					bgcolor: ColorBlack,
+				},
+				steps: [
+					{
+						down: [
+							{
+								actionId: 'recordingControl',
+								options: {
+									recordings: id,
+									command: 'START',
+								},
+							},
+						],
+						up: [],
+					},
+				],
+				feedbacks: [],
 			}
 		})
 	}
