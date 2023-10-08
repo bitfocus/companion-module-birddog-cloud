@@ -1,8 +1,8 @@
 import { InstanceBase, Regex, runEntrypoint, InstanceStatus } from '@companion-module/base'
 import { getActions } from './actions.js'
+import { getFeedbacks } from './feedbacks.js'
 import { getPresets } from './presets.js'
 import { getVariables } from './variables.js'
-import { getFeedbacks } from './feedbacks.js'
 import { upgradeScripts } from './upgrades.js'
 
 import fetch from 'node-fetch'
@@ -13,11 +13,17 @@ class BirdDogCloudInstance extends InstanceBase {
 		super(internal)
 	}
 
+	//Module Setup
 	async init(config) {
 		this.config = config
-		this.cloud = {}
-		this.states = {}
-		this.auth = {}
+
+		//Initialize Objects for Data Storage
+		this.cloud = {} //Basic Cloud Info (Company, Refresh Token)
+		this.auth = {} //Socketcluster-specific auth
+		this.states = {} //Channel data from Cloud
+		this.choices = {} //Dropdown options for Companion
+
+		//Auth setup for Socketcluster
 		this.websocketAuthEngine = {
 			saveToken: function (name, token, options) {
 				this.auth = { [`${name}`]: token }
@@ -30,6 +36,7 @@ class BirdDogCloudInstance extends InstanceBase {
 			},
 		}
 
+		//Start Connection to Cloud
 		this.updateStatus(InstanceStatus.Connecting)
 		this.initConnection()
 	}
@@ -54,9 +61,9 @@ class BirdDogCloudInstance extends InstanceBase {
 		]
 	}
 
-	initVariables() {
-		const variables = getVariables.bind(this)()
-		this.setVariableDefinitions(variables)
+	initActions() {
+		const actions = getActions.bind(this)()
+		this.setActionDefinitions(actions)
 	}
 
 	initFeedbacks() {
@@ -69,11 +76,12 @@ class BirdDogCloudInstance extends InstanceBase {
 		this.setPresetDefinitions(presets)
 	}
 
-	initActions() {
-		const actions = getActions.bind(this)()
-		this.setActionDefinitions(actions)
+	initVariables() {
+		const variables = getVariables.bind(this)()
+		this.setVariableDefinitions(variables)
 	}
 
+	//Cloud API Connections
 	initConnection() {
 		fetch(`https://app.birddog.cloud/api/refresh-token`, {
 			method: 'get',
@@ -228,58 +236,6 @@ class BirdDogCloudInstance extends InstanceBase {
 		})()
 	}
 
-	processChannelUpdate(type, channel, message) {
-		if (type === 'init') {
-			this.channelInit(channel, message.data)
-		} else if (type === 'add') {
-			this.channelAdd(channel, message.data)
-		} else if (type === 'delete') {
-			this.channelDelete(channel, message.data)
-		} else if (type === 'update') {
-			this.channelUpdate(channel, message.data)
-		} else {
-			console.log('Unknown channel message type')
-		}
-	}
-
-	channelInit(channel, data) {
-		this.states[`${channel}`] = data
-
-		this.setupConnections()
-		this.setupEndpoints()
-	}
-
-	channelAdd(channel, data) {
-		let arr = this.states[`${channel}`]
-		if (!arr) return
-		let index = arr.findIndex((el) => el.id === data.id)
-		if (index === -1) arr.push(data)
-		else arr[index] = data
-
-		this.setupConnections()
-	}
-
-	channelDelete(channel, data) {
-		let arr = this.states[`${channel}`]
-		if (!arr) return
-		let index = arr.findIndex((el) => el.id === data)
-		if (index !== -1) arr.splice(index, 1)
-
-		this.setupConnections()
-	}
-
-	channelUpdate(channel, data) {
-		let arr = this.states[`${channel}`]
-		if (!arr) return
-		let index = arr.findIndex((el) => el.id === data.id)
-		if (index === -1) return
-		Object.assign(arr[index], data.data)
-
-		this.initVariables() //temp
-		this.checkFeedbacks()
-		this.setupEndpoints()
-	}
-
 	startPoll() {
 		//Token expires every 24hrs
 		this.tokenReAuth = setInterval(() => {
@@ -294,16 +250,136 @@ class BirdDogCloudInstance extends InstanceBase {
 		}
 	}
 
+	//Handle Cloud Socketcluster Data
+	processChannelUpdate(type, channel, message) {
+		switch (type) {
+			case 'init':
+				this.channelInit(channel, message.data)
+				break
+			case 'add':
+				this.channelAdd(channel, message.data)
+				break
+			case 'delete':
+				this.channelDelete(channel, message.data)
+				break
+			case 'update':
+				this.channelUpdate(channel, message.data)
+				break
+			default:
+				console.log(`Unknown channel message type: ${type}`)
+				break
+		}
+	}
+
+	channelInit(channel, data) {
+		this.states[`${channel}`] = data
+
+		this.setupChannel(channel)
+	}
+
+	channelAdd(channel, data) {
+		let arr = this.states[`${channel}`]
+		if (!arr) return
+		let index = arr.findIndex((el) => el.id === data.id)
+		if (index === -1) arr.push(data)
+		else arr[index] = data
+
+		this.setupChannel(channel)
+	}
+
+	channelDelete(channel, data) {
+		let arr = this.states[`${channel}`]
+		if (!arr) return
+		let index = arr.findIndex((el) => el.id === data)
+		if (index !== -1) arr.splice(index, 1)
+
+		this.setupChannel(channel)
+	}
+
+	channelUpdate(channel, data) {
+		let arr = this.states[`${channel}`]
+		if (!arr) return
+		let index = arr.findIndex((el) => el.id === data.id)
+		if (index === -1) return
+		Object.assign(arr[index], data.data)
+
+		this.initVariables() //temp
+		this.checkFeedbacks()
+		this.setupEndpoints()
+	}
+
+	setupChannel(channel) {
+		switch (channel) {
+			case 'endpoints':
+				this.setupEndpoints()
+				break
+			case 'connections':
+				this.setupRecorders()
+				break
+			case 'recorders':
+				this.setupRecorders()
+				break
+			case 'recordings':
+				this.setupRecorders()
+				break
+			default:
+				console.log('Unknown setup channel')
+				break
+		}
+	}
+
+	syncChannel(channel) {
+		/* switch (channel) {
+			case 'endpoints':
+				this.setupEndpoints()
+				break
+			case 'connections':
+				this.setupRecorders()
+				break
+			case 'recorders':
+				this.setupRecorders()
+				break
+			case 'recordings':
+				this.setupRecorders()
+				break
+			default:
+				console.log('Unknown setup channel')
+				break
+		} */
+	}
+
+	//Handle Cloud REST Data
 	getCloudInfo() {
 		this.sendCommand('company/endpoints', 'get')
 		this.sendCommand('connections', 'get')
 		this.sendCommand('company/recorders', 'get')
-		//this.sendCommand('recordings', 'get')
-		//this.sendCommand('company', 'get')
-		//this.sendCommand('company/encoders', 'get')
-		//this.sendCommand('company/recordings', 'get')
 	}
 
+	processData(cmd, data) {
+		switch (cmd) {
+			case 'company/endpoints':
+				this.states.endpoints = data
+				this.setupEndpoints()
+				break
+			case 'connections':
+				this.states.connections = data
+				this.setupConnections()
+				break
+			case 'company/recorders':
+				this.states.recorders = data
+				this.setupRecorders()
+				break
+			case 'recordings':
+				this.states.recordings = data
+				this.setupRecordings()
+				break
+			default:
+				console.log(`Unknown REST data received: ${cmd}`)
+				break
+		}
+	}
+
+	//Send Commands to Cloud API
 	sendCommand(cmd, type, params) {
 		let url = `https://app.birddog.cloud/api/${cmd}`
 		let options = {}
@@ -327,7 +403,6 @@ class BirdDogCloudInstance extends InstanceBase {
 					return res.json()
 				}
 			})
-
 			.then((json) => {
 				let data = json
 				if (data) {
@@ -337,125 +412,6 @@ class BirdDogCloudInstance extends InstanceBase {
 			.catch((error) => {
 				this.log('debug', error)
 			})
-	}
-
-	processData(cmd, data) {
-		if (cmd.match('company/endpoints')) {
-			this.states.endpoints = data
-			this.setupEndpoints()
-		} else if (cmd.match('connections')) {
-			this.states.connections = data
-			this.setupConnections()
-		} else if (cmd.match('company/recorders')) {
-			this.states.recorders = data
-			this.setupRecorders()
-		} else if (cmd.match('recordings')) {
-			this.states.recordings = data
-			console.log(data)
-			this.setupRecordings()
-		} else {
-			//console.log(cmd)
-			//console.log(data)
-		}
-	}
-
-	getConnectionDisplayName(connection) {
-		if (connection.parameters.displayName) {
-			return connection.parameters.displayName
-		} else {
-			if (connection.parameters.connectionType === 'MULTI_VIEW') {
-				let sourceCount = connection.parameters.videoSources.length ? connection.parameters.videoSources.length : ''
-				return `MV ${sourceCount}`
-			} else {
-				if (connection.parameters.videoSources[0]) {
-					return connection.parameters.videoSources[0].name
-						? connection.parameters.videoSources[0].name
-						: connection.parameters.videoSources[0]
-				}
-			}
-		}
-	}
-
-	setupConnections() {
-		this.connectionList = []
-		this.presenterList = []
-
-		this.states.connections.forEach((connection) => {
-			let id = connection.id
-			let name = connection.id
-			name = this.getConnectionDisplayName(connection)
-
-			if (connection.parameters.multiView) {
-				if (connection.parameters.multiView.layout.match('PRESENTER_')) {
-					this.presenterList.push({ id: id, label: name })
-				}
-			}
-
-			this.connectionList.push({ id: id, label: name })
-			this.setVariableValues({
-				[`connection_status_${name}`]: connection.state === 'CONNECTED' ? 'Connected' : 'Stopped',
-			})
-		})
-		this.initActions()
-		this.initFeedbacks()
-		this.initVariables()
-		this.checkFeedbacks()
-		this.initPresets()
-	}
-
-	setupEndpoints() {
-		this.endpointList = []
-		this.audioDevices = []
-		this.states.endpoints.forEach((endpoint) => {
-			let id = endpoint.id
-			let name = endpoint.name
-
-			this.endpointList.push({ id: id, label: name })
-
-			endpoint.audioDevices?.forEach((device) => {
-				let name = device.value
-				this.audioDevices.push({ id: name, label: name })
-			})
-
-			this.setVariableValues({ [`endpoint_status_${name}`]: endpoint.online ? 'Connected' : 'Offline' })
-		})
-		this.initActions()
-		this.initFeedbacks()
-		this.initVariables()
-		this.checkFeedbacks()
-		this.initPresets()
-	}
-
-	setupRecorders() {
-		this.recorderList = []
-		this.states.recorders.forEach((recorder) => {
-			let id = recorder.id
-			let name = recorder.name
-
-			this.recorderList.push({ id: id, label: name })
-		})
-		this.sendCommand('recordings', 'get')
-	}
-
-	setupRecordings() {
-		this.recordingsList = []
-		this.states.recordings.forEach((recording) => {
-			let id = recording.id
-			let name = recording.parameters.input
-			let recorder = this.states.recorders.find(({ id }) => id === recording.recorderId)
-
-			if (recorder) {
-				name = `${recorder.name}-${name}`
-			}
-
-			this.recordingsList.push({ id: id, label: name })
-		})
-
-		this.initActions()
-		this.initFeedbacks()
-		this.initVariables()
-		this.checkFeedbacks()
-		this.initPresets()
 	}
 
 	async sendPresenterCommand(sourceId, connectionId, command, field, value) {
@@ -474,6 +430,110 @@ class BirdDogCloudInstance extends InstanceBase {
 				console.log(error)
 			}
 		})()
+	}
+
+	//Channel Specific Functions
+	getConnectionDisplayName(connection) {
+		if (connection.parameters.displayName) {
+			return connection.parameters.displayName
+		} else {
+			if (connection.parameters.connectionType === 'MULTI_VIEW') {
+				let sourceCount = connection.parameters.videoSources.length ? connection.parameters.videoSources.length : ''
+				return `MV ${sourceCount}`
+			} else {
+				if (connection.parameters.videoSources[0]) {
+					return connection.parameters.videoSources[0].name
+						? connection.parameters.videoSources[0].name
+						: connection.parameters.videoSources[0]
+				} else {
+					return connection.id
+				}
+			}
+		}
+	}
+
+	setupConnections() {
+		this.choices.connections = []
+		this.choices.presenters = []
+
+		this.states.connections.forEach((connection) => {
+			let id = connection.id
+			let name = connection.id
+			name = this.getConnectionDisplayName(connection)
+
+			if (connection.parameters.multiView) {
+				if (connection.parameters.multiView.layout.match('PRESENTER_')) {
+					this.choices.presenters.push({ id: id, label: name })
+				}
+			}
+
+			this.choices.connections.push({ id: id, label: name })
+			this.setVariableValues({
+				[`connection_status_${name}`]: connection.state === 'CONNECTED' ? 'Connected' : 'Stopped',
+			})
+		})
+		this.initActions()
+		this.initFeedbacks()
+		this.initVariables()
+		this.checkFeedbacks()
+		this.initPresets()
+	}
+
+	setupEndpoints() {
+		this.choices.endpoints = []
+		this.choices.audioDevices = []
+
+		this.states.endpoints.forEach((endpoint) => {
+			let id = endpoint.id
+			let name = endpoint.name
+
+			this.choices.endpoints.push({ id: id, label: name })
+
+			endpoint.audioDevices?.forEach((device) => {
+				let name = device.value
+				this.choices.audioDevices.push({ id: name, label: name })
+			})
+
+			this.setVariableValues({ [`endpoint_status_${name}`]: endpoint.online ? 'Connected' : 'Offline' })
+		})
+		this.initActions()
+		this.initFeedbacks()
+		this.initVariables()
+		this.checkFeedbacks()
+		this.initPresets()
+	}
+
+	setupRecorders() {
+		this.choices.recorders = []
+		this.states.recorders.forEach((recorder) => {
+			let id = recorder.id
+			let name = recorder.name
+
+			this.choices.recorders.push({ id: id, label: name })
+		})
+		//After recorders are set, get recording info
+		this.sendCommand('recordings', 'get')
+	}
+
+	setupRecordings() {
+		this.choices.recordings = []
+		this.states.recordings.forEach((recording) => {
+			let id = recording.id
+			let name = recording.parameters.input
+			let recorder = this.states.recorders.find(({ id }) => id === recording.recorderId)
+
+			if (recorder) {
+				name = `${recorder.name}-${name}`
+			}
+
+			this.choices.recordings.push({ id: id, label: name })
+		})
+
+		this.initActions()
+		this.initFeedbacks()
+		this.initVariables()
+		this.checkFeedbacks()
+		this.initPresets()
 	}
 }
 

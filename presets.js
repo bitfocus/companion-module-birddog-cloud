@@ -121,7 +121,7 @@ export function getPresets() {
 							{
 								actionId: 'recordingControl',
 								options: {
-									recordings: id,
+									recordings: [id],
 									command: 'START',
 								},
 							},

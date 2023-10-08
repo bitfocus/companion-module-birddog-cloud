@@ -29,7 +29,8 @@ export function getFeedbacks() {
 				type: 'dropdown',
 				label: 'Connections',
 				id: 'connection',
-				choices: this.connectionList,
+				choices: this.choices.connections,
+				default: this.choices.connections[0]?.id,
 			},
 		],
 		callback: (feedback) => {
@@ -51,7 +52,8 @@ export function getFeedbacks() {
 				type: 'dropdown',
 				label: 'Connections',
 				id: 'connection',
-				choices: this.connectionList,
+				choices: this.choices.connections,
+				default: this.choices.connections[0]?.id,
 			},
 		],
 		callback: (feedback) => {
@@ -72,7 +74,8 @@ export function getFeedbacks() {
 				type: 'dropdown',
 				label: 'Endpoints',
 				id: 'endpoint',
-				choices: this.endpointList,
+				choices: this.choices.endpoints,
+				default: this.choices.endpoints[0]?.id,
 			},
 		],
 		callback: (feedback) => {
