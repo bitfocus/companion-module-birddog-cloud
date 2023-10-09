@@ -21,6 +21,7 @@ class BirdDogCloudInstance extends InstanceBase {
 		this.cloud = {} //Basic Cloud Info (Company, Refresh Token)
 		this.auth = {} //Socketcluster-specific auth
 		this.states = {} //Channel data from Cloud
+		this.states.presenters = {}
 		this.choices = {} //Dropdown options for Companion
 
 		//Auth setup for Socketcluster
@@ -196,8 +197,10 @@ class BirdDogCloudInstance extends InstanceBase {
 						// Disconnected by another process with the same id, let us disable this cloud instance,
 						// to prevent connection looping
 						console.log(`Disconnected`)
+					} else if (event.error.code === 4001) {
+						console.log(`Disconnected, will reconnect`)
 					} else {
-						console.log(`DISCONNECT::::::::`, event)
+						console.log(`Disconnected`, event)
 					}
 				}
 			}
@@ -238,9 +241,12 @@ class BirdDogCloudInstance extends InstanceBase {
 
 	startPoll() {
 		//Token expires every 24hrs
-		this.tokenReAuth = setInterval(() => {
-			this.initConnection()
-		}, 24 * 60 * 60 * 1000)
+		this.tokenReAuth = setInterval(
+			() => {
+				this.initConnection()
+			},
+			24 * 60 * 60 * 1000,
+		)
 	}
 
 	stopPoll() {
@@ -278,30 +284,42 @@ class BirdDogCloudInstance extends InstanceBase {
 	}
 
 	channelAdd(channel, data) {
-		let arr = this.states[`${channel}`]
-		if (!arr) return
-		let index = arr.findIndex((el) => el.id === data.id)
-		if (index === -1) arr.push(data)
-		else arr[index] = data
+		let prevState = this.states[`${channel}`]
+
+		if (prevState) {
+			let index = prevState.findIndex((el) => el.id === data.id)
+			if (index === -1) {
+				prevState.push(data)
+			} else {
+				prevState[index] = data
+			}
+		}
 
 		this.setupChannel(channel)
 	}
 
 	channelDelete(channel, data) {
-		let arr = this.states[`${channel}`]
-		if (!arr) return
-		let index = arr.findIndex((el) => el.id === data)
-		if (index !== -1) arr.splice(index, 1)
+		let prevState = this.states[`${channel}`]
+
+		if (prevState) {
+			let index = prevState.findIndex((el) => el.id === data)
+			if (index !== -1) {
+				prevState.splice(index, 1)
+			}
+		}
 
 		this.setupChannel(channel)
 	}
 
 	channelUpdate(channel, data) {
-		let arr = this.states[`${channel}`]
-		if (!arr) return
-		let index = arr.findIndex((el) => el.id === data.id)
-		if (index === -1) return
-		Object.assign(arr[index], data.data)
+		let prevState = this.states[`${channel}`]
+		console.log(data)
+		if (prevState) {
+			let index = prevState.findIndex((el) => el.id === data.id)
+			if (index > -1) {
+				Object.assign(prevState[index], data.data)
+			}
+		}
 
 		this.initVariables() //temp
 		this.checkFeedbacks()
@@ -314,13 +332,13 @@ class BirdDogCloudInstance extends InstanceBase {
 				this.setupEndpoints()
 				break
 			case 'connections':
-				this.setupRecorders()
+				this.setupConnections()
 				break
 			case 'recorders':
 				this.setupRecorders()
 				break
 			case 'recordings':
-				this.setupRecorders()
+				this.setupRecordings()
 				break
 			default:
 				console.log('Unknown setup channel')
@@ -464,6 +482,7 @@ class BirdDogCloudInstance extends InstanceBase {
 			if (connection.parameters.multiView) {
 				if (connection.parameters.multiView.layout.match('PRESENTER_')) {
 					this.choices.presenters.push({ id: id, label: name })
+					this.setupPresenter(connection)
 				}
 			}
 
@@ -474,9 +493,56 @@ class BirdDogCloudInstance extends InstanceBase {
 		})
 		this.initActions()
 		this.initFeedbacks()
+		this.initPresets()
 		this.initVariables()
 		this.checkFeedbacks()
-		this.initPresets()
+	}
+
+	async setupPresenter(connection) {
+		let connectionId = connection.id
+		let endpointId = connection.sourceId
+		if (!this.states.presenters[connectionId]) {
+			this.states.presenters[connectionId] = {}
+		}
+
+		if (this.socket) {
+			;(async () => {
+				let subState = this.socket.isSubscribed(`/presenter/${endpointId}/${connectionId}`)
+				if (subState === false) {
+					let channel = this.socket.subscribe(`/presenter/${endpointId}/${connectionId}`)
+					for await (let message of channel) {
+						this.processPresenterUpdate(message.msg, connectionId, message, connection)
+					}
+				}
+			})()
+		}
+	}
+
+	processPresenterUpdate(type, connectionId, message, connection) {
+		switch (type) {
+			case 'setFullscreen':
+				let source = message.data.sourceName
+				if (connection.parameters?.multiView?.mainSource === source) {
+					this.states.presenters[connectionId].layout = 'setFullscreenMain'
+				} else {
+					this.states.presenters[connectionId].layout = 'setFullscreenVideo'
+				}
+				this.checkFeedbacks('presenterLayout')
+				break
+			case 'setMixed':
+				this.states.presenters[connectionId].layout = 'setMixed'
+				this.checkFeedbacks('presenterLayout')
+				break
+			case 'setAudioReceiver':
+				this.states.presenters[connectionId].audioDevice = message.data.sourceName
+					? message.data.sourceName
+					: message.data.deviceName
+				this.checkFeedbacks('presenterAudioDevice')
+				break
+			default:
+				//console.log(`Unknown channel message type: ${type}`)
+				break
+		}
 	}
 
 	setupEndpoints() {
@@ -489,18 +555,27 @@ class BirdDogCloudInstance extends InstanceBase {
 
 			this.choices.endpoints.push({ id: id, label: name })
 
+			endpoint.ndiSources?.forEach((device) => {
+				let index = this.choices.audioDevices.findIndex((el) => el.id === device)
+				if (index === -1) {
+					this.choices.audioDevices.push({ id: device, label: device })
+				}
+			})
 			endpoint.audioDevices?.forEach((device) => {
 				let name = device.value
-				this.choices.audioDevices.push({ id: name, label: name })
+				let index = this.choices.audioDevices.findIndex((el) => el.id === name)
+				if (index === -1) {
+					this.choices.audioDevices.push({ id: name, label: name })
+				}
 			})
 
 			this.setVariableValues({ [`endpoint_status_${name}`]: endpoint.online ? 'Connected' : 'Offline' })
 		})
 		this.initActions()
 		this.initFeedbacks()
+		this.initPresets()
 		this.initVariables()
 		this.checkFeedbacks()
-		this.initPresets()
 	}
 
 	setupRecorders() {
@@ -528,12 +603,11 @@ class BirdDogCloudInstance extends InstanceBase {
 
 			this.choices.recordings.push({ id: id, label: name })
 		})
-
 		this.initActions()
 		this.initFeedbacks()
+		this.initPresets()
 		this.initVariables()
 		this.checkFeedbacks()
-		this.initPresets()
 	}
 }
 

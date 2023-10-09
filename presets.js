@@ -13,13 +13,15 @@ export function getPresets() {
 		this.states.endpoints.forEach((endpoint) => {
 			let id = endpoint.id
 			let name = endpoint.name
+			let variableName = name.replace(/[\W]/gi, '_')
+
 			presets[`endpoint_${name}_status`] = {
 				type: 'button',
-				category: 'Endpoints',
+				category: 'Endpoint Status',
 				name: `Endpoint ${name} Status`,
 				options: {},
 				style: {
-					text: `${name}\\n\\n$(birddog-cloud:endpoint_status_${name})`,
+					text: `${name}\\n\\n$(birddog-cloud:endpoint_status_${variableName})`,
 					size: '7',
 					color: ColorWhite,
 					bgcolor: ColorBlack,
@@ -60,14 +62,15 @@ export function getPresets() {
 			let id = connection.id
 			let name = connection.id
 			name = this.getConnectionDisplayName(connection)
+			let variableName = name.replace(/[\W]/gi, '_')
 
 			presets[`connection_${name}_toggle`] = {
 				type: 'button',
-				category: 'Connections',
+				category: 'Connection Actions',
 				name: `Start/Stop ${name}`,
 				options: {},
 				style: {
-					text: `Start/Stop\\n${name}`,
+					text: `START/STOP\\n\\n${name}`,
 					size: '7',
 					color: ColorWhite,
 					bgcolor: ColorBlack,
@@ -96,6 +99,103 @@ export function getPresets() {
 					},
 				],
 			}
+			presets[`connection_${name}_start`] = {
+				type: 'button',
+				category: 'Connection Actions',
+				name: `Start ${name}`,
+				options: {},
+				style: {
+					text: `START\\n\\n${name}`,
+					size: '7',
+					color: ColorWhite,
+					bgcolor: ColorBlack,
+				},
+				steps: [
+					{
+						down: [
+							{
+								actionId: 'connectionControl',
+								options: {
+									connection: id,
+									command: 'START',
+								},
+							},
+						],
+						up: [],
+					},
+				],
+				feedbacks: [
+					{
+						feedbackId: 'connectionStatus',
+						options: {
+							connection: `${id}`,
+						},
+						style: {},
+					},
+				],
+			}
+			presets[`connection_${name}_stop`] = {
+				type: 'button',
+				category: 'Connection Actions',
+				name: `Stop ${name}`,
+				options: {},
+				style: {
+					text: `STOP\\n\\n${name}`,
+					size: '7',
+					color: ColorWhite,
+					bgcolor: ColorBlack,
+				},
+				steps: [
+					{
+						down: [
+							{
+								actionId: 'connectionControl',
+								options: {
+									connection: id,
+									command: 'STOP',
+								},
+							},
+						],
+						up: [],
+					},
+				],
+				feedbacks: [
+					{
+						feedbackId: 'connectionStatus',
+						options: {
+							connection: `${id}`,
+						},
+						style: {},
+					},
+				],
+			}
+			presets[`connection_${name}_status`] = {
+				type: 'button',
+				category: 'Connection Status',
+				name: `Status ${name}`,
+				options: {},
+				style: {
+					text: `${name}\\n\\n$(birddog-cloud:connection_status_${variableName})`,
+					size: '7',
+					color: ColorWhite,
+					bgcolor: ColorBlack,
+				},
+				steps: [
+					{
+						down: [],
+						up: [],
+					},
+				],
+				feedbacks: [
+					{
+						feedbackId: 'connectionStatus',
+						options: {
+							connection: `${id}`,
+						},
+						style: {},
+					},
+				],
+			}
 		})
 	}
 
@@ -103,14 +203,15 @@ export function getPresets() {
 		this.states.recordings.forEach((recording) => {
 			let id = recording.id
 			let name = recording.parameters.input
+			let variableName = name.replace(/[\W]/gi, '_')
 
 			presets[`recording_${name}_start`] = {
 				type: 'button',
-				category: 'Recordings',
+				category: 'Recording Actions',
 				name: `Start ${name}`,
 				options: {},
 				style: {
-					text: `START\\n${name}`,
+					text: `START\\n\\n${name}`,
 					size: '7',
 					color: ColorWhite,
 					bgcolor: ColorBlack,
@@ -130,6 +231,155 @@ export function getPresets() {
 					},
 				],
 				feedbacks: [],
+			}
+			presets[`recording_${name}_stop`] = {
+				type: 'button',
+				category: 'Recording Actions',
+				name: `Stop ${name}`,
+				options: {},
+				style: {
+					text: `STOP\\n\\n${name}`,
+					size: '7',
+					color: ColorWhite,
+					bgcolor: ColorBlack,
+				},
+				steps: [
+					{
+						down: [
+							{
+								actionId: 'recordingControl',
+								options: {
+									recordings: [id],
+									command: 'STOP',
+								},
+							},
+						],
+						up: [],
+					},
+				],
+				feedbacks: [],
+			}
+		})
+	}
+
+	if (this.choices.presenters) {
+		this.choices.presenters.forEach((presenter) => {
+			let id = presenter.id
+			let name = presenter.label
+
+			presets[`presenter_${name}_main_full`] = {
+				type: 'button',
+				category: 'Presenter Layout Control',
+				name: `Presenter ${name} Main Full`,
+				options: {},
+				style: {
+					text: `${name}\\n\\nMAIN`,
+					size: '7',
+					color: ColorWhite,
+					bgcolor: ColorBlack,
+				},
+				steps: [
+					{
+						down: [
+							{
+								actionId: 'presenterLayout',
+								options: {
+									connection: id,
+									layout: 'setFullscreenMain',
+								},
+							},
+						],
+						up: [],
+					},
+				],
+				feedbacks: [
+					{
+						feedbackId: 'presenterLayout',
+						options: {
+							connection: `${id}`,
+							layout: 'setFullscreenMain',
+						},
+						style: {
+							bgcolor: ColorGreen,
+						},
+					},
+				],
+			}
+			presets[`presenter_${name}_video_full`] = {
+				type: 'button',
+				category: 'Presenter Layout Control',
+				name: `Presenter ${name} Video Full`,
+				options: {},
+				style: {
+					text: `${name}\\n\\nVIDEO`,
+					size: '7',
+					color: ColorWhite,
+					bgcolor: ColorBlack,
+				},
+				steps: [
+					{
+						down: [
+							{
+								actionId: 'presenterLayout',
+								options: {
+									connection: id,
+									layout: 'setFullscreenVideo',
+								},
+							},
+						],
+						up: [],
+					},
+				],
+				feedbacks: [
+					{
+						feedbackId: 'presenterLayout',
+						options: {
+							connection: `${id}`,
+							layout: 'setFullscreenVideo',
+						},
+						style: {
+							bgcolor: ColorGreen,
+						},
+					},
+				],
+			}
+			presets[`presenter_${name}_video_mix`] = {
+				type: 'button',
+				category: 'Presenter Layout Control',
+				name: `Presenter ${name} Video Mix`,
+				options: {},
+				style: {
+					text: `${name}\\n\\nMIX SOURCES`,
+					size: '7',
+					color: ColorWhite,
+					bgcolor: ColorBlack,
+				},
+				steps: [
+					{
+						down: [
+							{
+								actionId: 'presenterLayout',
+								options: {
+									connection: id,
+									layout: 'setMixed',
+								},
+							},
+						],
+						up: [],
+					},
+				],
+				feedbacks: [
+					{
+						feedbackId: 'presenterLayout',
+						options: {
+							connection: `${id}`,
+							layout: 'setMixed',
+						},
+						style: {
+							bgcolor: ColorGreen,
+						},
+					},
+				],
 			}
 		})
 	}

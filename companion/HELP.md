@@ -1,6 +1,6 @@
 ## BirdDog Cloud
 
-Control [BirdDog Cloud](https://birddog.cloud) streams, recordings, and settings.
+Control [BirdDog Cloud](https://birddog.cloud) connections, recordings, and settings.
 
 ## Getting Started
 

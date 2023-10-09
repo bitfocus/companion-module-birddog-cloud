@@ -17,6 +17,12 @@ export function getFeedbacks() {
 		STOPPED: ColorGray,
 	}
 
+	let presenterLayoutOptions = [
+		{ id: 'setFullscreenMain', label: 'Main Source Fullscreen' },
+		{ id: 'setFullscreenVideo', label: 'Video Source Fullscreen' },
+		{ id: 'setMixed', label: 'Mix Sources' },
+	]
+
 	feedbacks['connectionStarted'] = {
 		type: 'boolean',
 		name: 'Connection Connected',
@@ -58,7 +64,11 @@ export function getFeedbacks() {
 		],
 		callback: (feedback) => {
 			let connection = this.states.connections?.find(({ id }) => id === feedback.options.connection)
-			return { bgcolor: connectionColors[`${connection.state}`] }
+			if (connection) {
+				return { bgcolor: connectionColors[`${connection.state}`] }
+			} else {
+				return { bgcolor: connectionColors[`FAILED`] }
+			}
 		},
 	}
 
@@ -85,6 +95,62 @@ export function getFeedbacks() {
 			} else {
 				return false
 			}
+		},
+	}
+
+	feedbacks['presenterLayout'] = {
+		type: 'boolean',
+		name: 'Presenter Layout',
+		description: 'Change style if a Presenter is set to the selected layout',
+		defaultStyle: {
+			bgcolor: ColorGreen,
+		},
+		options: [
+			{
+				type: 'dropdown',
+				label: 'Presenter Connection',
+				id: 'connection',
+				choices: this.choices.presenters,
+				default: this.choices.presenters[0]?.id,
+			},
+			{
+				type: 'dropdown',
+				label: 'Layout',
+				id: 'layout',
+				choices: presenterLayoutOptions,
+				default: 'setFullscreenMain',
+			},
+		],
+		callback: (feedback) => {
+			return this.states.presenters[feedback.options.connection]?.layout === feedback.options.layout
+		},
+	}
+
+	feedbacks['presenterAudioDevice'] = {
+		type: 'boolean',
+		name: 'Presenter Audio Device',
+		description: 'Change style if a Presenter is set to the selected audio device',
+		defaultStyle: {
+			bgcolor: ColorGreen,
+		},
+		options: [
+			{
+				type: 'dropdown',
+				label: 'Presenter Connection',
+				id: 'connection',
+				choices: this.choices.presenters,
+				default: this.choices.presenters[0]?.id,
+			},
+			{
+				type: 'dropdown',
+				label: 'Audio Device',
+				id: 'audio',
+				choices: this.choices.audioDevices,
+				default: this.choices.audioDevices[0]?.id,
+			},
+		],
+		callback: (feedback) => {
+			return this.states.presenters[feedback.options.connection]?.audioDevice === feedback.options.audio
 		},
 	}
 
