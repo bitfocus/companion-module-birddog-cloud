@@ -142,7 +142,6 @@ class BirdDogCloudInstance extends InstanceBase {
 				}
 			})
 			.catch((error) => {
-				console.log(error)
 				this.log('debug', error)
 				this.updateStatus(InstanceStatus.ConnectionFailure)
 			})
@@ -169,7 +168,7 @@ class BirdDogCloudInstance extends InstanceBase {
 		;(async () => {
 			while (this.socket) {
 				for await (let _event of this.socket.listener('connect')) {
-					console.log('Socket is connected')
+					//console.log('Socket is connected')
 				}
 			}
 		})()
@@ -178,7 +177,7 @@ class BirdDogCloudInstance extends InstanceBase {
 				for await (let event of this.socket.listener('authenticate')) {
 					// In case a client is already listening
 					if (this.socket.authState !== 'authenticated') {
-						console.log(`Connection lost authentication, retrying`)
+						//console.log(`Connection lost authentication, retrying`)
 					}
 				}
 			}
@@ -186,7 +185,7 @@ class BirdDogCloudInstance extends InstanceBase {
 		;(async () => {
 			while (this.socket) {
 				for await (let event of this.socket.listener('disconnect')) {
-					console.log('disconnect')
+					//console.log('disconnect')
 				}
 			}
 		})()
@@ -196,11 +195,11 @@ class BirdDogCloudInstance extends InstanceBase {
 					if (event.error.code === 4401) {
 						// Disconnected by another process with the same id, let us disable this cloud instance,
 						// to prevent connection looping
-						console.log(`Disconnected`)
+						//console.log(`Disconnected`)
 					} else if (event.error.code === 4001) {
-						console.log(`Disconnected, will reconnect`)
+						//console.log(`Disconnected, will reconnect`)
 					} else {
-						console.log(`Disconnected`, event)
+						this.log('debug', `Disconnected: ${event}`)
 					}
 				}
 			}
@@ -272,7 +271,7 @@ class BirdDogCloudInstance extends InstanceBase {
 				this.channelUpdate(channel, message.data)
 				break
 			default:
-				console.log(`Unknown channel message type: ${type}`)
+				this.log('debug', `Unknown channel message type: ${type}`)
 				break
 		}
 	}
@@ -313,7 +312,7 @@ class BirdDogCloudInstance extends InstanceBase {
 
 	channelUpdate(channel, data) {
 		let prevState = this.states[`${channel}`]
-		console.log(data)
+
 		if (prevState) {
 			let index = prevState.findIndex((el) => el.id === data.id)
 			if (index > -1) {
@@ -341,7 +340,7 @@ class BirdDogCloudInstance extends InstanceBase {
 				this.setupRecordings()
 				break
 			default:
-				console.log('Unknown setup channel')
+				this.log('debug', `Unknown setup channel: ${channel}`)
 				break
 		}
 	}
@@ -361,7 +360,7 @@ class BirdDogCloudInstance extends InstanceBase {
 				this.setupRecorders()
 				break
 			default:
-				console.log('Unknown setup channel')
+				this.log('debug', `Unknown sync channel: ${channel}`)
 				break
 		} */
 	}
@@ -392,7 +391,7 @@ class BirdDogCloudInstance extends InstanceBase {
 				this.setupRecordings()
 				break
 			default:
-				console.log(`Unknown REST data received: ${cmd}`)
+				this.log('debug', `Unknown REST data received: ${cmd}`)
 				break
 		}
 	}
@@ -440,12 +439,11 @@ class BirdDogCloudInstance extends InstanceBase {
 				connectionId: connectionId,
 				[`${field}`]: value,
 			}
-			console.log(object)
+
 			try {
 				result = await this.socket.invoke(command, object)
-				console.log(result)
 			} catch (error) {
-				console.log(error)
+				this.log('debug', `Error sending presenter command: ${error}`)
 			}
 		})()
 	}
