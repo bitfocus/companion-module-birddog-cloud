@@ -86,6 +86,58 @@ export function getActions() {
 				})
 			},
 		},
+		recorderControl: {
+			name: 'Start/Stop All Recordings on Recorder',
+			options: [
+				{
+					type: 'dropdown',
+					label: 'Recorder',
+					id: 'recorder',
+					choices: this.choices.recorders,
+				},
+				{
+					type: 'dropdown',
+					label: 'Action',
+					id: 'command',
+					choices: [
+						{ id: 'START', label: 'Start All' },
+						{ id: 'STOP', label: 'Stop All' },
+					],
+					default: 'START',
+				},
+			],
+			callback: (action) => {
+				let field
+				let recordings = []
+				let state
+				let recorderSources = this.states.recordings.filter(
+					(recording) => recording.recorderId === action.options.recorder,
+				)
+
+				if (recorderSources) {
+					recorderSources.forEach((recording) => {
+						let id = recording.id
+						recordings.push(id)
+						return recordings
+					})
+
+					if (recordings.length > 1) {
+						field = 'ids'
+						recordings = recordings
+						state = action.options.command === 'START' ? 'START_MULTIPLE' : 'STOP_MULTIPLE'
+					} else {
+						field = 'id'
+						recordings = recordings[0]
+						state = action.options.command
+					}
+
+					this.sendCommand(`recording/action`, 'POST', {
+						[`${field}`]: recordings,
+						action: state,
+					})
+				}
+			},
+		},
 		presenterLayout: {
 			name: 'Set Presenter Layout',
 			options: [
