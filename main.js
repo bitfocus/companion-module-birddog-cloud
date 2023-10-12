@@ -121,9 +121,8 @@ class BirdDogCloudInstance extends InstanceBase {
 	}
 
 	async startWebsocket() {
-		fetch(`https://app.birddog.cloud/api/start-webrtc`, {
-			method: 'post',
-			body: JSON.stringify({}),
+		fetch(`https://app.birddog.cloud/api/load-token`, {
+			method: 'get',
 			headers: { 'Content-type': 'application/json', Authorization: `Bearer ${this.cloud.refreshToken}` },
 		})
 			.then((res) => {
@@ -136,20 +135,22 @@ class BirdDogCloudInstance extends InstanceBase {
 			})
 			.then((json) => {
 				if (json) {
-					this.cloud.websocketToken = json.jwt
-					this.websocketAuthEngine.saveToken('websocketToken', json.jwt)
+					this.cloud.websocketToken = json
+					this.websocketAuthEngine.saveToken('websocketToken', json)
 					this.startSocketCluster()
 				}
 			})
 			.catch((error) => {
-				this.log('debug', error)
+				console.log(error)
 				this.updateStatus(InstanceStatus.ConnectionFailure)
 			})
 	}
 
 	async startSocketCluster() {
 		if (this.socket !== undefined) {
-			this.destroy()
+			this.socket.disconnect()
+			this.socket = null
+			console.log('destroy socket')
 		}
 
 		this.socket = SCClient.create({
@@ -168,7 +169,7 @@ class BirdDogCloudInstance extends InstanceBase {
 		;(async () => {
 			while (this.socket) {
 				for await (let _event of this.socket.listener('connect')) {
-					//console.log('Socket is connected')
+					console.log('Socket is connected')
 				}
 			}
 		})()
@@ -177,7 +178,7 @@ class BirdDogCloudInstance extends InstanceBase {
 				for await (let event of this.socket.listener('authenticate')) {
 					// In case a client is already listening
 					if (this.socket.authState !== 'authenticated') {
-						//console.log(`Connection lost authentication, retrying`)
+						console.log(`Connection lost authentication, retrying`)
 					}
 				}
 			}
@@ -185,7 +186,8 @@ class BirdDogCloudInstance extends InstanceBase {
 		;(async () => {
 			while (this.socket) {
 				for await (let event of this.socket.listener('disconnect')) {
-					//console.log('disconnect')
+					console.log('disconnect')
+					this.startWebsocket()
 				}
 			}
 		})()
@@ -212,6 +214,14 @@ class BirdDogCloudInstance extends InstanceBase {
 			}
 		})()
 		;(async () => {
+			while (this.socket) {
+				for await (let event of this.socket.listener('subscribeFail')) {
+					console.log(`Failed to subscribe to channel: ${event.channel}`)
+					this.log('debug', `Failed to subscribe to channel: ${event.channel}`)
+				}
+			}
+		})()
+		;(async () => {
 			let channel = this.socket.subscribe(`/connections/${this.cloud.companyId}`)
 			for await (let message of channel) {
 				this.processChannelUpdate(message.msg, 'connections', message)
@@ -223,16 +233,22 @@ class BirdDogCloudInstance extends InstanceBase {
 				this.processChannelUpdate(message.msg, 'endpoints', message)
 			}
 		})()
-		/* ;(async () => {
+		;(async () => {
+			let channel = this.socket.subscribe(`/recorders/${this.cloud.companyId}`)
+			for await (let message of channel) {
+				this.processChannelUpdate(message.msg, 'recorders', message)
+			}
+		})()
+		;(async () => {
 			let channel = this.socket.subscribe(`/recordings/${this.cloud.companyId}`)
 			for await (let message of channel) {
 				this.processChannelUpdate(message.msg, 'recordings', message)
 			}
-		})() */
+		})()
 		;(async () => {
 			while (this.socket) {
 				for await (let event of this.socket.listener('message')) {
-					//console.log(event)
+					console.log(event)
 				}
 			}
 		})()

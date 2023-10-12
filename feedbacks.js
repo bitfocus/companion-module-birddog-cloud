@@ -154,5 +154,31 @@ export function getFeedbacks() {
 		},
 	}
 
+	feedbacks['recordingActive'] = {
+		type: 'boolean',
+		name: 'Recording Active',
+		description: 'Change style if a recording is active',
+		defaultStyle: {
+			bgcolor: ColorRed,
+		},
+		options: [
+			{
+				type: 'dropdown',
+				label: 'Presenter Connection',
+				id: 'recording',
+				choices: this.choices.recordings,
+				default: this.choices.recordings[0]?.id,
+			},
+		],
+		callback: (feedback) => {
+			let recording = this.states.recordings?.find(({ id }) => id === feedback.options.recording)
+			if (recording) {
+				return recording.isStarted
+			} else {
+				return false
+			}
+		},
+	}
+
 	return feedbacks
 }
