@@ -541,7 +541,7 @@ class BirdDogCloudInstance extends InstanceBase {
 	setupEndpoints() {
 		this.choices.endpoints = []
 		this.choices.audioDevices = []
-		console.log(this.states.endpoints)
+
 		this.states.endpoints.forEach((endpoint) => {
 			let id = endpoint.id
 			let name = endpoint.name
