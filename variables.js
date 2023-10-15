@@ -13,25 +13,39 @@ export function getVariables() {
 			let id = connection.id
 			let name = connection.id
 			name = this.getConnectionDisplayName(connection)
-			name = name.replace(/[\W]/gi, '_')
+			let cleanName = name.replace(/[\W]/gi, '_')
 
 			variables.push({
 				name: `Connection Status - ${name}`,
-				variableId: `connection_status_${name}`,
+				variableId: `connection_status_${cleanName}`,
 			})
-			this.setVariableValues({ [`connection_status_${name}`]: connectionStates[`${connection.state}`] })
+			this.setVariableValues({ [`connection_status_${cleanName}`]: connectionStates[`${connection.state}`] })
 		})
 	}
 
 	if (this.states.endpoints) {
 		this.states.endpoints.forEach((endpoint) => {
 			let name = endpoint.name
+			let cleanName = name.replace(/[\W]/gi, '_')
 			variables.push({
 				name: `Endpoint Status - ${name}`,
-				variableId: `endpoint_status_${name}`,
+				variableId: `endpoint_status_${cleanName}`,
 			})
-			this.setVariableValues({ [`endpoint_status_${name}`]: endpoint.online ? 'Connected' : 'Offline' })
+			this.setVariableValues({ [`endpoint_status_${cleanName}`]: endpoint.online ? 'Connected' : 'Offline' })
 		})
 	}
+
+	if (this.states.recordings) {
+		this.states.recordings.forEach((recording) => {
+			let name = recording.parameters?.input
+			let cleanName = name.replace(/[\W]/gi, '_')
+			variables.push({
+				name: `Recording Status - ${name}`,
+				variableId: `recording_status_${cleanName}`,
+			})
+			this.setVariableValues({ [`recording_status_${cleanName}`]: recording.isStarted ? 'Recording' : 'Stopped' })
+		})
+	}
+
 	return variables
 }

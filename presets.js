@@ -259,6 +259,35 @@ export function getPresets() {
 				],
 				feedbacks: [],
 			}
+			presets[`recording_${name}_status`] = {
+				type: 'button',
+				category: 'Recording Status',
+				name: `Status ${name}`,
+				options: {},
+				style: {
+					text: `${name}\\n\\n$(birddog-cloud:recording_status_${variableName})`,
+					size: '7',
+					color: ColorWhite,
+					bgcolor: ColorBlack,
+				},
+				steps: [
+					{
+						down: [],
+						up: [],
+					},
+				],
+				feedbacks: [
+					{
+						feedbackId: 'recordingActive',
+						options: {
+							recording: `${id}`,
+						},
+						style: {
+							bgcolor: ColorRed,
+						},
+					},
+				],
+			}
 		})
 	}
 

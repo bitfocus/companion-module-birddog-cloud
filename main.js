@@ -136,8 +136,38 @@ class BirdDogCloudInstance extends InstanceBase {
 			.then((json) => {
 				if (json) {
 					this.cloud.websocketToken = json
+					let parsedToken = JSON.parse(Buffer.from(json.split('.')[1], 'base64').toString())
+					this.cloud.websocketTokenExp = parsedToken?.exp
 					this.websocketAuthEngine.saveToken('websocketToken', json)
 					this.startSocketCluster()
+				}
+			})
+			.catch((error) => {
+				console.log(error)
+				this.updateStatus(InstanceStatus.ConnectionFailure)
+			})
+	}
+
+	async getWebsocketAuth() {
+		fetch(`https://app.birddog.cloud/api/load-token`, {
+			method: 'get',
+			headers: { 'Content-type': 'application/json', Authorization: `Bearer ${this.cloud.refreshToken}` },
+		})
+			.then((res) => {
+				if (res.status == 200) {
+					return res.json()
+				} else if (res.status == 401) {
+					this.log('error', 'Invalid API Token')
+					this.updateStatus(InstanceStatus.ConnectionFailure)
+				}
+			})
+			.then((json) => {
+				if (json) {
+					this.cloud.websocketToken = json
+					let parsedToken = JSON.parse(Buffer.from(json.split('.')[1], 'base64').toString())
+					this.cloud.websocketTokenExp = parsedToken?.exp
+					this.websocketAuthEngine.saveToken('websocketToken', json)
+					//	this.startSocketCluster()
 				}
 			})
 			.catch((error) => {
@@ -185,9 +215,17 @@ class BirdDogCloudInstance extends InstanceBase {
 		})()
 		;(async () => {
 			while (this.socket) {
+				for await (let event of this.socket.listener('deauthenticate')) {
+					this.getWebsocketAuth()
+					console.log(`Connection lost authentication`)
+				}
+			}
+		})()
+		;(async () => {
+			while (this.socket) {
 				for await (let event of this.socket.listener('disconnect')) {
 					console.log('disconnect')
-					this.startWebsocket()
+					//this.startWebsocket()
 				}
 			}
 		})()
@@ -248,7 +286,7 @@ class BirdDogCloudInstance extends InstanceBase {
 		;(async () => {
 			while (this.socket) {
 				for await (let event of this.socket.listener('message')) {
-					console.log(event)
+					//console.log(event)
 				}
 			}
 		})()
