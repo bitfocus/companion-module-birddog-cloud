@@ -111,7 +111,7 @@ export function getActions() {
 				let recordings = []
 				let state
 				let recorderSources = this.states.recordings.filter(
-					(recording) => recording.recorderId === action.options.recorder,
+					(recording) => recording.recorderId === action.options.recorder
 				)
 
 				if (recorderSources) {
@@ -205,7 +205,7 @@ export function getActions() {
 					connection.id,
 					'setAudioReceiver',
 					fieldType,
-					action.options.audio,
+					action.options.audio
 				)
 			},
 		},

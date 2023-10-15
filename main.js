@@ -1,4 +1,4 @@
-import { InstanceBase, Regex, runEntrypoint, InstanceStatus } from '@companion-module/base'
+import { InstanceBase, runEntrypoint, InstanceStatus } from '@companion-module/base'
 import { getActions } from './actions.js'
 import { getFeedbacks } from './feedbacks.js'
 import { getPresets } from './presets.js'
@@ -161,7 +161,7 @@ class BirdDogCloudInstance extends InstanceBase {
 		;(async () => {
 			while (this.socket) {
 				for await (let event of this.socket.listener('subscribeFail')) {
-					console.log(`Failed to subscribe to channel: ${event.channel}`)
+					//console.log(`Failed to subscribe to channel: ${event.channel}`)
 					this.log('debug', `Failed to subscribe to channel: ${event.channel}`)
 				}
 			}
@@ -243,6 +243,21 @@ class BirdDogCloudInstance extends InstanceBase {
 			.catch((error) => {
 				this.log('debug', error)
 			})
+	}
+
+	async checkTokenExpiry() {
+		let now = Date.now() / 1000
+
+		if (this.cloud.refreshTokenExp > now) {
+			return true
+		} else {
+			let newToken = await this.getRefreshToken()
+			if (newToken) {
+				return true
+			} else {
+				return false
+			}
+		}
 	}
 
 	async getWebsocketAuth() {
@@ -414,21 +429,6 @@ class BirdDogCloudInstance extends InstanceBase {
 		}
 	}
 
-	async checkTokenExpiry() {
-		let now = Date.now() / 1000
-
-		if (this.cloud.refreshTokenExp > now) {
-			return true
-		} else {
-			let newToken = await this.getRefreshToken()
-			if (newToken) {
-				return true
-			} else {
-				return false
-			}
-		}
-	}
-
 	//Send Commands to Cloud API
 	async sendCommand(cmd, type, params) {
 		let url = `https://app.birddog.cloud/api/${cmd}`
@@ -541,7 +541,7 @@ class BirdDogCloudInstance extends InstanceBase {
 	setupEndpoints() {
 		this.choices.endpoints = []
 		this.choices.audioDevices = []
-
+		console.log(this.states.endpoints)
 		this.states.endpoints.forEach((endpoint) => {
 			let id = endpoint.id
 			let name = endpoint.name
