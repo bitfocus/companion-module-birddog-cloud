@@ -23,7 +23,7 @@ export function getFeedbacks() {
 		{ id: 'setMixed', label: 'Mix Sources' },
 	]
 
-	feedbacks['connectionStarted'] = {
+	feedbacks['connectionConnected'] = {
 		type: 'boolean',
 		name: 'Connection Connected',
 		description: 'Change style if a connection is connected',

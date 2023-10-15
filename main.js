@@ -132,14 +132,14 @@ class BirdDogCloudInstance extends InstanceBase {
 		;(async () => {
 			while (this.socket) {
 				for await (let _event of this.socket.listener('connect')) {
-					console.log('Socket is connected')
+					//console.log('Socket connected')
 				}
 			}
 		})()
 		;(async () => {
 			while (this.socket) {
 				for await (let event of this.socket.listener('disconnect')) {
-					console.log('disconnect')
+					//console.log('Socket disconnected')
 				}
 			}
 		})()
@@ -147,7 +147,7 @@ class BirdDogCloudInstance extends InstanceBase {
 			while (this.socket) {
 				for await (let event of this.socket.listener('deauthenticate')) {
 					this.getWebsocketAuth()
-					console.log(`Connection lost authentication`)
+					//console.log(`Socket lost authentication`)
 				}
 			}
 		})()
@@ -340,9 +340,7 @@ class BirdDogCloudInstance extends InstanceBase {
 			}
 		}
 
-		this.initVariables() //temp
-		this.checkFeedbacks()
-		this.setupEndpoints()
+		this.updateChannel(channel, data)
 	}
 
 	setupChannel(channel) {
@@ -365,24 +363,24 @@ class BirdDogCloudInstance extends InstanceBase {
 		}
 	}
 
-	syncChannel(channel) {
-		/* switch (channel) {
+	updateChannel(channel, data) {
+		switch (channel) {
 			case 'endpoints':
-				this.setupEndpoints()
+				this.updateEndpoints(data)
 				break
 			case 'connections':
-				this.setupRecorders()
+				this.updateConnections(data)
 				break
 			case 'recorders':
 				this.setupRecorders()
 				break
 			case 'recordings':
-				this.setupRecorders()
+				this.updateRecordings(data)
 				break
 			default:
 				this.log('debug', `Unknown sync channel: ${channel}`)
 				break
-		} */
+		}
 	}
 
 	//Handle Cloud REST Data
@@ -489,25 +487,6 @@ class BirdDogCloudInstance extends InstanceBase {
 	}
 
 	//Channel Specific Functions
-	getConnectionDisplayName(connection) {
-		if (connection.parameters.displayName) {
-			return connection.parameters.displayName
-		} else {
-			if (connection.parameters.connectionType === 'MULTI_VIEW') {
-				let sourceCount = connection.parameters.videoSources.length ? connection.parameters.videoSources.length : ''
-				return `MV ${sourceCount}`
-			} else {
-				if (connection.parameters.videoSources[0]) {
-					return connection.parameters.videoSources[0].name
-						? connection.parameters.videoSources[0].name
-						: connection.parameters.videoSources[0]
-				} else {
-					return connection.id
-				}
-			}
-		}
-	}
-
 	setupConnections() {
 		this.choices.connections = []
 		this.choices.presenters = []
@@ -536,6 +515,125 @@ class BirdDogCloudInstance extends InstanceBase {
 		this.checkFeedbacks()
 	}
 
+	updateConnections(data) {
+		let connectionId = data.id
+		let newData = data.data
+
+		let connection = this.states.connections?.find(({ id }) => id === connectionId)
+		let name = connection.id
+		name = this.getConnectionDisplayName(connection)
+
+		if ('state' in newData) {
+			let connectionStates = {
+				CONNECTED: 'Connected',
+				CONNECTING: 'Connecting',
+				FAILED: 'Failed',
+				STOPPED: 'Stopped',
+			}
+
+			this.setVariableValues({
+				[`connection_status_${name}`]: connectionStates[`${newData.state}`],
+			})
+			this.checkFeedbacks('connectionStatus', 'connectionConnected')
+		}
+	}
+
+	setupEndpoints() {
+		this.choices.endpoints = []
+		this.choices.audioDevices = []
+
+		this.states.endpoints.forEach((endpoint) => {
+			let id = endpoint.id
+			let name = endpoint.name
+
+			this.choices.endpoints.push({ id: id, label: name })
+
+			endpoint.ndiSources?.forEach((device) => {
+				let index = this.choices.audioDevices.findIndex((el) => el.id === device)
+				if (index === -1) {
+					this.choices.audioDevices.push({ id: device, label: device })
+				}
+			})
+			endpoint.audioDevices?.forEach((device) => {
+				let name = device.value
+				let index = this.choices.audioDevices.findIndex((el) => el.id === name)
+				if (index === -1) {
+					this.choices.audioDevices.push({ id: name, label: name })
+				}
+			})
+
+			this.setVariableValues({ [`endpoint_status_${name}`]: endpoint.online ? 'Connected' : 'Offline' })
+		})
+		this.initActions()
+		this.initFeedbacks()
+		this.initPresets()
+		this.initVariables()
+		this.checkFeedbacks()
+	}
+
+	updateEndpoints(data) {
+		let endpointId = data.id
+		let newData = data.data
+
+		if ('online' in newData) {
+			let endpoint = this.states.endpoints?.find(({ id }) => id === endpointId)
+
+			let name = endpoint?.name
+			let cleanName = name.replace(/[\W]/gi, '_')
+			this.setVariableValues({ [`endpoint_status_${cleanName}`]: newData.online ? 'Connected' : 'Offline' })
+			this.checkFeedbacks('endpointOnline')
+		}
+		if ('name' in newData) {
+			this.setupEndpoints()
+		}
+	}
+
+	setupRecorders() {
+		this.choices.recorders = []
+		this.states.recorders.forEach((recorder) => {
+			let id = recorder.id
+			let name = recorder.name
+
+			this.choices.recorders.push({ id: id, label: name })
+		})
+		//After recorders are set, get recording info
+		this.sendCommand('recordings', 'get')
+	}
+
+	setupRecordings() {
+		this.choices.recordings = []
+		this.states.recordings.forEach((recording) => {
+			let id = recording.id
+			let name = recording.parameters.input
+			let recorder = this.states.recorders.find(({ id }) => id === recording.recorderId)
+
+			if (recorder) {
+				name = `${recorder.name}-${name}`
+			}
+
+			this.choices.recordings.push({ id: id, label: name })
+		})
+		this.initActions()
+		this.initFeedbacks()
+		this.initPresets()
+		this.initVariables()
+		this.checkFeedbacks()
+	}
+
+	updateRecordings(data) {
+		let recordingId = data.id
+		let newData = data.data
+
+		if ('isStarted' in newData) {
+			let recording = this.states.recordings?.find(({ id }) => id === recordingId)
+			let name = recording.parameters?.input
+			let cleanName = name.replace(/[\W]/gi, '_')
+			this.setVariableValues({ [`recording_status_${cleanName}`]: newData.isStarted ? 'Recording' : 'Stopped' })
+			this.checkFeedbacks('recordingActive')
+		}
+	}
+
+	//Presenter Mode
 	async setupPresenter(connection) {
 		let connectionId = connection.id
 		let endpointId = connection.sourceId
@@ -583,69 +681,24 @@ class BirdDogCloudInstance extends InstanceBase {
 		}
 	}
 
-	setupEndpoints() {
-		this.choices.endpoints = []
-		this.choices.audioDevices = []
-
-		this.states.endpoints.forEach((endpoint) => {
-			let id = endpoint.id
-			let name = endpoint.name
-
-			this.choices.endpoints.push({ id: id, label: name })
-
-			endpoint.ndiSources?.forEach((device) => {
-				let index = this.choices.audioDevices.findIndex((el) => el.id === device)
-				if (index === -1) {
-					this.choices.audioDevices.push({ id: device, label: device })
+	//Helper Functions
+	getConnectionDisplayName(connection) {
+		if (connection.parameters.displayName) {
+			return connection.parameters.displayName
+		} else {
+			if (connection.parameters.connectionType === 'MULTI_VIEW') {
+				let sourceCount = connection.parameters.videoSources.length ? connection.parameters.videoSources.length : ''
+				return `MV ${sourceCount}`
+			} else {
+				if (connection.parameters.videoSources[0]) {
+					return connection.parameters.videoSources[0].name
+						? connection.parameters.videoSources[0].name
+						: connection.parameters.videoSources[0]
+				} else {
+					return connection.id
 				}
-			})
-			endpoint.audioDevices?.forEach((device) => {
-				let name = device.value
-				let index = this.choices.audioDevices.findIndex((el) => el.id === name)
-				if (index === -1) {
-					this.choices.audioDevices.push({ id: name, label: name })
-				}
-			})
-
-			this.setVariableValues({ [`endpoint_status_${name}`]: endpoint.online ? 'Connected' : 'Offline' })
-		})
-		this.initActions()
-		this.initFeedbacks()
-		this.initPresets()
-		this.initVariables()
-		this.checkFeedbacks()
-	}
-
-	setupRecorders() {
-		this.choices.recorders = []
-		this.states.recorders.forEach((recorder) => {
-			let id = recorder.id
-			let name = recorder.name
-
-			this.choices.recorders.push({ id: id, label: name })
-		})
-		//After recorders are set, get recording info
-		this.sendCommand('recordings', 'get')
-	}
-
-	setupRecordings() {
-		this.choices.recordings = []
-		this.states.recordings.forEach((recording) => {
-			let id = recording.id
-			let name = recording.parameters.input
-			let recorder = this.states.recorders.find(({ id }) => id === recording.recorderId)
-
-			if (recorder) {
-				name = `${recorder.name}-${name}`
 			}
-
-			this.choices.recordings.push({ id: id, label: name })
-		})
-		this.initActions()
-		this.initFeedbacks()
-		this.initPresets()
-		this.initVariables()
-		this.checkFeedbacks()
+		}
 	}
 }
 
