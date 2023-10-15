@@ -167,7 +167,7 @@ export function getFeedbacks() {
 				label: 'Presenter Connection',
 				id: 'recording',
 				choices: this.choices.recordings,
-				default: this.choices.recordings[0]?.id,
+				default: this.choices.recordings?.[0]?.id,
 			},
 		],
 		callback: (feedback) => {

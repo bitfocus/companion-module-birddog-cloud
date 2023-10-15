@@ -83,106 +83,37 @@ class BirdDogCloudInstance extends InstanceBase {
 	}
 
 	//Cloud API Connections
-	initConnection() {
-		fetch(`https://app.birddog.cloud/api/refresh-token`, {
-			method: 'get',
-			headers: { 'Content-type': 'application/json', Authorization: `Bearer ${this.config.token}` },
-		})
-			.then((res) => {
-				if (res.status == 200) {
-					return res.text()
-				} else if (res.status == 401) {
-					this.log('error', 'Invalid API Token')
-					this.updateStatus(InstanceStatus.ConnectionFailure)
-				}
-			})
-			.then((text) => {
-				if (text) {
-					let parsedToken = JSON.parse(Buffer.from(text.split('.')[1], 'base64').toString())
+	async initConnection() {
+		let token = await this.getRefreshToken()
+		if (token) {
+			this.log('info', 'Connected to BirdDog Cloud')
+			this.updateStatus(InstanceStatus.Ok)
 
-					if (parsedToken) {
-						this.cloud.refreshToken = text
-						this.cloud.refreshTokenExp = parsedToken?.exp
-						this.cloud.companyId = parsedToken.cid
-
-						this.log('info', 'Connected to BirdDog Cloud')
-						this.updateStatus(InstanceStatus.Ok)
-
-						this.startPoll()
-						this.getCloudInfo()
-						this.startWebsocket()
-					}
-				}
-			})
-			.catch((error) => {
-				this.log('debug', error)
-				this.updateStatus(InstanceStatus.ConnectionFailure)
-			})
+			this.getCloudInfo()
+			this.startWebsocket()
+		} else {
+			this.updateStatus(InstanceStatus.ConnectionFailure)
+			this.log('debug', 'Unable to authenticate with refresh token')
+		}
 	}
 
 	async startWebsocket() {
-		fetch(`https://app.birddog.cloud/api/load-token`, {
-			method: 'get',
-			headers: { 'Content-type': 'application/json', Authorization: `Bearer ${this.cloud.refreshToken}` },
-		})
-			.then((res) => {
-				if (res.status == 200) {
-					return res.json()
-				} else if (res.status == 401) {
-					this.log('error', 'Invalid API Token')
-					this.updateStatus(InstanceStatus.ConnectionFailure)
-				}
-			})
-			.then((json) => {
-				if (json) {
-					this.cloud.websocketToken = json
-					let parsedToken = JSON.parse(Buffer.from(json.split('.')[1], 'base64').toString())
-					this.cloud.websocketTokenExp = parsedToken?.exp
-					this.websocketAuthEngine.saveToken('websocketToken', json)
-					this.startSocketCluster()
-				}
-			})
-			.catch((error) => {
-				console.log(error)
-				this.updateStatus(InstanceStatus.ConnectionFailure)
-			})
-	}
-
-	async getWebsocketAuth() {
-		fetch(`https://app.birddog.cloud/api/load-token`, {
-			method: 'get',
-			headers: { 'Content-type': 'application/json', Authorization: `Bearer ${this.cloud.refreshToken}` },
-		})
-			.then((res) => {
-				if (res.status == 200) {
-					return res.json()
-				} else if (res.status == 401) {
-					this.log('error', 'Invalid API Token')
-					this.updateStatus(InstanceStatus.ConnectionFailure)
-				}
-			})
-			.then((json) => {
-				if (json) {
-					this.cloud.websocketToken = json
-					let parsedToken = JSON.parse(Buffer.from(json.split('.')[1], 'base64').toString())
-					this.cloud.websocketTokenExp = parsedToken?.exp
-					this.websocketAuthEngine.saveToken('websocketToken', json)
-					//	this.startSocketCluster()
-				}
-			})
-			.catch((error) => {
-				console.log(error)
-				this.updateStatus(InstanceStatus.ConnectionFailure)
-			})
+		let authenticated = await this.getWebsocketAuth()
+		if (authenticated) {
+			this.startSocketCluster()
+		} else {
+			this.log('debug', 'Unable to authenticate with Socketcluster')
+		}
 	}
 
 	async startSocketCluster() {
+		//Close socket before creating a new one
 		if (this.socket !== undefined) {
 			this.socket.disconnect()
 			this.socket = null
-			console.log('destroy socket')
 		}
 
+		//Create socket
 		this.socket = SCClient.create({
 			hostname: 'app.birddog.cloud',
 			secure: true,
@@ -196,6 +127,8 @@ class BirdDogCloudInstance extends InstanceBase {
 				maxDelay: 20000, //milliseconds
 			},
 		})
+
+		//Socket Listeners
 		;(async () => {
 			while (this.socket) {
 				for await (let _event of this.socket.listener('connect')) {
@@ -205,11 +138,8 @@ class BirdDogCloudInstance extends InstanceBase {
 		})()
 		;(async () => {
 			while (this.socket) {
-				for await (let event of this.socket.listener('authenticate')) {
-					// In case a client is already listening
-					if (this.socket.authState !== 'authenticated') {
-						console.log(`Connection lost authentication, retrying`)
-					}
+				for await (let event of this.socket.listener('disconnect')) {
+					console.log('disconnect')
 				}
 			}
 		})()
@@ -218,29 +148,6 @@ class BirdDogCloudInstance extends InstanceBase {
 				for await (let event of this.socket.listener('deauthenticate')) {
 					this.getWebsocketAuth()
 					console.log(`Connection lost authentication`)
-				}
-			}
-		})()
-		;(async () => {
-			while (this.socket) {
-				for await (let event of this.socket.listener('disconnect')) {
-					console.log('disconnect')
-					//this.startWebsocket()
-				}
-			}
-		})()
-		;(async () => {
-			while (this.socket) {
-				for await (let event of this.socket.listener('error')) {
-					if (event.error.code === 4401) {
-						// Disconnected by another process with the same id, let us disable this cloud instance,
-						// to prevent connection looping
-						//console.log(`Disconnected`)
-					} else if (event.error.code === 4001) {
-						//console.log(`Disconnected, will reconnect`)
-					} else {
-						this.log('debug', `Disconnected: ${event}`)
-					}
 				}
 			}
 		})()
@@ -260,27 +167,14 @@ class BirdDogCloudInstance extends InstanceBase {
 			}
 		})()
 		;(async () => {
-			let channel = this.socket.subscribe(`/connections/${this.cloud.companyId}`)
-			for await (let message of channel) {
-				this.processChannelUpdate(message.msg, 'connections', message)
-			}
-		})()
-		;(async () => {
-			let channel = this.socket.subscribe(`/endpoints/${this.cloud.companyId}`)
-			for await (let message of channel) {
-				this.processChannelUpdate(message.msg, 'endpoints', message)
-			}
-		})()
-		;(async () => {
-			let channel = this.socket.subscribe(`/recorders/${this.cloud.companyId}`)
-			for await (let message of channel) {
-				this.processChannelUpdate(message.msg, 'recorders', message)
-			}
-		})()
-		;(async () => {
-			let channel = this.socket.subscribe(`/recordings/${this.cloud.companyId}`)
-			for await (let message of channel) {
-				this.processChannelUpdate(message.msg, 'recordings', message)
+			while (this.socket) {
+				for await (let event of this.socket.listener('error')) {
+					if (event.error.code === 4401 || event.error.code === 4001) {
+						//console.log(`Disconnected, will reconnect`)
+					} else {
+						this.log('debug', `Disconnected: ${event}`)
+					}
+				}
 			}
 		})()
 		;(async () => {
@@ -290,23 +184,95 @@ class BirdDogCloudInstance extends InstanceBase {
 				}
 			}
 		})()
+
+		//Socket Channel Subscriptions
+		;(async () => {
+			let channel = this.socket.subscribe(`/connections/${this.cloud.companyId}`, { batch: true })
+			for await (let message of channel) {
+				this.processChannelUpdate(message.msg, 'connections', message)
+			}
+		})()
+		;(async () => {
+			let channel = this.socket.subscribe(`/endpoints/${this.cloud.companyId}`, { batch: true })
+			for await (let message of channel) {
+				this.processChannelUpdate(message.msg, 'endpoints', message)
+			}
+		})()
+		;(async () => {
+			let channel = this.socket.subscribe(`/recorders/${this.cloud.companyId}`, { batch: true })
+			for await (let message of channel) {
+				this.processChannelUpdate(message.msg, 'recorders', message)
+			}
+		})()
+		;(async () => {
+			let channel = this.socket.subscribe(`/recordings/${this.cloud.companyId}`, { batch: true })
+			for await (let message of channel) {
+				this.processChannelUpdate(message.msg, 'recordings', message)
+			}
+		})()
 	}
 
-	startPoll() {
-		//Token expires every 24hrs
-		this.tokenReAuth = setInterval(
-			() => {
-				this.initConnection()
-			},
-			24 * 60 * 60 * 1000,
-		)
+	//Authentication Requests
+	async getRefreshToken() {
+		return fetch(`https://app.birddog.cloud/api/refresh-token`, {
+			method: 'get',
+			headers: { 'Content-type': 'application/json', Authorization: `Bearer ${this.config.token}` },
+		})
+			.then((res) => {
+				if (res.status == 200) {
+					return res.text()
+				} else if (res.status == 401) {
+					this.log('error', 'Invalid API Token')
+					this.updateStatus(InstanceStatus.ConnectionFailure)
+				}
+			})
+			.then((text) => {
+				if (text) {
+					let parsedToken = JSON.parse(Buffer.from(text.split('.')[1], 'base64').toString())
+
+					if (parsedToken) {
+						this.cloud.refreshToken = text
+						this.cloud.refreshTokenExp = parsedToken?.exp
+						this.cloud.companyId = parsedToken.cid
+						return true
+					} else {
+						return false
+					}
+				}
+			})
+			.catch((error) => {
+				this.log('debug', error)
+			})
 	}
 
-	stopPoll() {
-		if (this.tokenReAuth) {
-			clearInterval(this.tokenReAuth)
-			delete this.tokenReAuth
-		}
+	async getWebsocketAuth() {
+		return fetch(`https://app.birddog.cloud/api/load-token`, {
+			method: 'get',
+			headers: { 'Content-type': 'application/json', Authorization: `Bearer ${this.cloud.refreshToken}` },
+		})
+			.then((res) => {
+				if (res.status == 200) {
+					return res.json()
+				} else if (res.status == 401) {
+					this.log('error', 'Invalid API Token')
+					this.updateStatus(InstanceStatus.ConnectionFailure)
+				}
+			})
+			.then((json) => {
+				if (json) {
+					this.cloud.websocketToken = json
+					let parsedToken = JSON.parse(Buffer.from(json.split('.')[1], 'base64').toString())
+					this.cloud.websocketTokenExp = parsedToken?.exp
+					this.websocketAuthEngine.saveToken('websocketToken', json)
+					return true
+				} else {
+					return false
+				}
+			})
+			.catch((error) => {
+				this.log('debug', error)
+				this.updateStatus(InstanceStatus.ConnectionFailure)
+			})
 	}
 
 	//Handle Cloud Socketcluster Data
@@ -450,39 +416,59 @@ class BirdDogCloudInstance extends InstanceBase {
 		}
 	}
 
-	//Send Commands to Cloud API
-	sendCommand(cmd, type, params) {
-		let url = `https://app.birddog.cloud/api/${cmd}`
-		let options = {}
-		if (type == 'PUT' || type == 'POST') {
-			options = {
-				method: type,
-				body: params != undefined ? JSON.stringify(params) : null,
-				headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${this.cloud.refreshToken}` },
-			}
+	async checkTokenExpiry() {
+		let now = Date.now() / 1000
+
+		if (this.cloud.refreshTokenExp > now) {
+			return true
 		} else {
-			options = {
-				method: type,
-				body: params != undefined ? JSON.stringify(params) : null,
-				headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${this.cloud.refreshToken}` },
+			let newToken = await this.getRefreshToken()
+			if (newToken) {
+				return true
+			} else {
+				return false
 			}
 		}
+	}
 
-		fetch(url, options)
-			.then((res) => {
-				if (res.status == 200) {
-					return res.json()
+	//Send Commands to Cloud API
+	async sendCommand(cmd, type, params) {
+		let url = `https://app.birddog.cloud/api/${cmd}`
+		let options = {}
+
+		let fresh = await this.checkTokenExpiry()
+
+		if (fresh) {
+			if (type == 'PUT' || type == 'POST') {
+				options = {
+					method: type,
+					body: params != undefined ? JSON.stringify(params) : null,
+					headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${this.cloud.refreshToken}` },
 				}
-			})
-			.then((json) => {
-				let data = json
-				if (data) {
-					this.processData(cmd, data)
+			} else {
+				options = {
+					method: type,
+					body: params != undefined ? JSON.stringify(params) : null,
+					headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${this.cloud.refreshToken}` },
 				}
-			})
-			.catch((error) => {
-				this.log('debug', error)
-			})
+			}
+
+			fetch(url, options)
+				.then((res) => {
+					if (res.status == 200) {
+						return res.json()
+					}
+				})
+				.then((json) => {
+					let data = json
+					if (data) {
+						this.processData(cmd, data)
+					}
+				})
+				.catch((error) => {
+					this.log('debug', error)
+				})
+		}
 	}
 
 	async sendPresenterCommand(sourceId, connectionId, command, field, value) {
@@ -561,7 +547,7 @@ class BirdDogCloudInstance extends InstanceBase {
 			;(async () => {
 				let subState = this.socket.isSubscribed(`/presenter/${endpointId}/${connectionId}`)
 				if (subState === false) {
-					let channel = this.socket.subscribe(`/presenter/${endpointId}/${connectionId}`)
+					let channel = this.socket.subscribe(`/presenter/${endpointId}/${connectionId}`, { batch: true })
 					for await (let message of channel) {
 						this.processPresenterUpdate(message.msg, connectionId, message, connection)
 					}
