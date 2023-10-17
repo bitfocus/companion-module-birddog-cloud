@@ -689,7 +689,7 @@ class BirdDogCloudInstance extends InstanceBase {
 				let sourceCount = connection.parameters.videoSources.length ? connection.parameters.videoSources.length : ''
 				return `MV ${sourceCount}`
 			} else {
-				if (connection.parameters.videoSources[0]) {
+				if (connection.parameters.videoSources?.[0]) {
 					return connection.parameters.videoSources[0].name
 						? connection.parameters.videoSources[0].name
 						: connection.parameters.videoSources[0]
