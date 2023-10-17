@@ -11,6 +11,16 @@ export function getActions() {
 		{ id: 'setMixed', label: 'Mix Sources' },
 	]
 
+	let ptzOptions = [
+		{ id: 'left', label: 'Left' },
+		{ id: 'right', label: 'Right' },
+		{ id: 'up', label: 'Up' },
+		{ id: 'down', label: 'Down' },
+		{ id: 'in', label: 'Zoom In' },
+		{ id: 'out', label: 'Zoom Out' },
+		{ id: 'stop', label: 'Stop' },
+	]
+
 	return {
 		connectionControl: {
 			name: 'Start/Stop Connection',
@@ -167,7 +177,13 @@ export function getActions() {
 					sourceName = connection.parameters.multiView.mainSource
 				}
 
-				this.sendPresenterCommand(connection.sourceId, connection.id, layout, 'sourceName', sourceName)
+				let body = {
+					sourceId: connection.sourceId,
+					connectionId: connection.id,
+					sourceName: sourceName,
+				}
+
+				this.sendPresenterCommand(layout, body)
 			},
 		},
 		presenterAudioDevice: {
@@ -200,13 +216,91 @@ export function getActions() {
 					}
 				}
 
-				this.sendPresenterCommand(
-					connection.sourceId,
-					connection.id,
-					'setAudioReceiver',
-					fieldType,
-					action.options.audio
-				)
+				let body = {
+					sourceId: connection.sourceId,
+					connectionId: connection.id,
+					[`${fieldType}`]: action.options.audio,
+				}
+
+				this.sendPresenterCommand('setAudioReceiver', body)
+			},
+		},
+		presenterPtz: {
+			name: 'Presenter - PTZ Control',
+			options: [
+				{
+					type: 'dropdown',
+					label: 'Presenter Connection',
+					id: 'connection',
+					choices: this.choices.presenters,
+					default: this.choices.presenters[0]?.id,
+				},
+				{
+					type: 'dropdown',
+					label: 'Device',
+					id: 'device',
+					choices: this.choices.ndiSources,
+					default: this.choices.ndiSources[0]?.id,
+				},
+				{
+					type: 'dropdown',
+					label: 'PTZ Action',
+					id: 'ptz',
+					choices: ptzOptions,
+					default: 'left',
+				},
+				{
+					type: 'number',
+					label: 'PTZ Speed',
+					id: 'speed',
+					default: 0.5,
+					min: 0,
+					max: 1,
+					step: 0.1,
+					range: true,
+					isVisible: (options) => options.ptz !== 'stop',
+				},
+			],
+			callback: (action) => {
+				let connection = this.states.connections.find(({ id }) => id === action.options.connection)
+				let panVal = 0
+				let tiltVal = 0
+				let zoomVal = 0
+				let speed = action.options.speed
+
+				switch (action.options.ptz) {
+					case 'left':
+						panVal = speed
+						break
+					case 'right':
+						panVal = -speed
+						break
+					case 'up':
+						tiltVal = speed
+						break
+					case 'down':
+						tiltVal = -speed
+						break
+					case 'in':
+						zoomVal = speed
+						break
+					case 'out':
+						zoomVal = -speed
+						break
+					default:
+						break
+				}
+
+				let body = {
+					sourceId: connection.sourceId,
+					connectionId: connection.id,
+					sourceName: action.options.device,
+					pan: panVal,
+					tilt: tiltVal,
+					zoom: zoomVal,
+				}
+
+				this.sendPresenterCommand('ptz', body)
 			},
 		},
 	}

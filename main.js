@@ -469,17 +469,11 @@ class BirdDogCloudInstance extends InstanceBase {
 		}
 	}
 
-	async sendPresenterCommand(sourceId, connectionId, command, field, value) {
+	async sendPresenterCommand(command, body) {
 		;(async () => {
 			let result
-			let object = {
-				sourceId: sourceId,
-				connectionId: connectionId,
-				[`${field}`]: value,
-			}
-
 			try {
-				result = await this.socket.invoke(command, object)
+				result = await this.socket.invoke(command, body)
 			} catch (error) {
 				this.log('debug', `Error sending presenter command: ${error}`)
 			}
@@ -541,6 +535,7 @@ class BirdDogCloudInstance extends InstanceBase {
 	setupEndpoints() {
 		this.choices.endpoints = []
 		this.choices.audioDevices = []
+		this.choices.ndiSources = []
 
 		this.states.endpoints.forEach((endpoint) => {
 			let id = endpoint.id
@@ -552,6 +547,10 @@ class BirdDogCloudInstance extends InstanceBase {
 				let index = this.choices.audioDevices.findIndex((el) => el.id === device)
 				if (index === -1) {
 					this.choices.audioDevices.push({ id: device, label: device })
+				}
+				let indexNdi = this.choices.ndiSources.findIndex((el) => el.id === device)
+				if (indexNdi === -1) {
+					this.choices.ndiSources.push({ id: device, label: device })
 				}
 			})
 			endpoint.audioDevices?.forEach((device) => {
