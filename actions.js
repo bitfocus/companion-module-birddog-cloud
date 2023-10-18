@@ -121,7 +121,7 @@ export function getActions() {
 				let recordings = []
 				let state
 				let recorderSources = this.states.recordings.filter(
-					(recording) => recording.recorderId === action.options.recorder,
+					(recording) => recording.recorderId === action.options.recorder
 				)
 
 				if (recorderSources) {
@@ -165,6 +165,22 @@ export function getActions() {
 					choices: presenterLayoutOptions,
 					default: 'setFullscreenMain',
 				},
+				{
+					type: 'checkbox',
+					label: 'Use Custom Source',
+					id: 'custom',
+					default: false,
+					isVisible: (options) => options.layout === 'setFullscreenVideo' || options.layout === 'setMixed',
+				},
+				{
+					type: 'dropdown',
+					label: 'Custom Source',
+					id: 'source',
+					choices: this.choices.presentersSources,
+					default: this.choices.presentersSources?.[0]?.id,
+					isVisible: (options) =>
+						(options.layout === 'setFullscreenVideo' || options.layout === 'setMixed') && options.custom === true,
+				},
 			],
 			callback: (action) => {
 				let connection = this.states.connections.find(({ id }) => id === action.options.connection)
@@ -172,7 +188,11 @@ export function getActions() {
 				let sourceName
 
 				if (action.options.layout === 'setMixed' || action.options.layout === 'setFullscreenVideo') {
-					sourceName = connection.parameters.multiView.firstVideoSource
+					if (action.options.custom === true) {
+						sourceName = action.options.source
+					} else {
+						sourceName = connection.parameters.multiView.firstVideoSource
+					}
 				} else {
 					sourceName = connection.parameters.multiView.mainSource
 				}
