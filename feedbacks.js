@@ -36,7 +36,7 @@ export function getFeedbacks() {
 				label: 'Connections',
 				id: 'connection',
 				choices: this.choices.connections,
-				default: this.choices.connections[0]?.id,
+				default: this.choices.connections?.[0]?.id,
 			},
 		],
 		callback: (feedback) => {
@@ -59,7 +59,7 @@ export function getFeedbacks() {
 				label: 'Connections',
 				id: 'connection',
 				choices: this.choices.connections,
-				default: this.choices.connections[0]?.id,
+				default: this.choices.connections?.[0]?.id,
 			},
 		],
 		callback: (feedback) => {
@@ -85,7 +85,7 @@ export function getFeedbacks() {
 				label: 'Endpoints',
 				id: 'endpoint',
 				choices: this.choices.endpoints,
-				default: this.choices.endpoints[0]?.id,
+				default: this.choices.endpoints?.[0]?.id,
 			},
 		],
 		callback: (feedback) => {
@@ -111,7 +111,7 @@ export function getFeedbacks() {
 				label: 'Presenter Connection',
 				id: 'connection',
 				choices: this.choices.presenters,
-				default: this.choices.presenters[0]?.id,
+				default: this.choices.presenters?.[0]?.id,
 			},
 			{
 				type: 'dropdown',
@@ -139,14 +139,14 @@ export function getFeedbacks() {
 				label: 'Presenter Connection',
 				id: 'connection',
 				choices: this.choices.presenters,
-				default: this.choices.presenters[0]?.id,
+				default: this.choices.presenters?.[0]?.id,
 			},
 			{
 				type: 'dropdown',
 				label: 'Audio Device',
 				id: 'audio',
 				choices: this.choices.audioDevices,
-				default: this.choices.audioDevices[0]?.id,
+				default: this.choices.audioDevices?.[0]?.id,
 			},
 		],
 		callback: (feedback) => {

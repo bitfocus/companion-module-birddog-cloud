@@ -241,6 +241,7 @@ class BirdDogCloudInstance extends InstanceBase {
 				}
 			})
 			.catch((error) => {
+				console.log(error)
 				this.log('debug', error)
 			})
 	}
@@ -285,6 +286,7 @@ class BirdDogCloudInstance extends InstanceBase {
 				}
 			})
 			.catch((error) => {
+				console.log(error)
 				this.log('debug', error)
 				this.updateStatus(InstanceStatus.ConnectionFailure)
 			})
@@ -464,6 +466,7 @@ class BirdDogCloudInstance extends InstanceBase {
 					}
 				})
 				.catch((error) => {
+					console.log(error)
 					this.log('debug', error)
 				})
 		}

@@ -30,7 +30,7 @@ export function getActions() {
 					label: 'Connections',
 					id: 'connection',
 					choices: this.choices.connections,
-					default: this.choices.connections[0]?.id,
+					default: this.choices.connections?.[0]?.id,
 				},
 				{
 					type: 'dropdown',
@@ -121,7 +121,7 @@ export function getActions() {
 				let recordings = []
 				let state
 				let recorderSources = this.states.recordings.filter(
-					(recording) => recording.recorderId === action.options.recorder
+					(recording) => recording.recorderId === action.options.recorder,
 				)
 
 				if (recorderSources) {
@@ -156,7 +156,7 @@ export function getActions() {
 					label: 'Presenter Connection',
 					id: 'connection',
 					choices: this.choices.presenters,
-					default: this.choices.presenters[0]?.id,
+					default: this.choices.presenters?.[0]?.id,
 				},
 				{
 					type: 'dropdown',
@@ -194,14 +194,14 @@ export function getActions() {
 					label: 'Presenter Connection',
 					id: 'connection',
 					choices: this.choices.presenters,
-					default: this.choices.presenters[0]?.id,
+					default: this.choices.presenters?.[0]?.id,
 				},
 				{
 					type: 'dropdown',
 					label: 'Audio Device',
 					id: 'audio',
 					choices: this.choices.audioDevices,
-					default: this.choices.audioDevices[0]?.id,
+					default: this.choices.audioDevices?.[0]?.id,
 				},
 			],
 			callback: (action) => {
@@ -233,14 +233,14 @@ export function getActions() {
 					label: 'Presenter Connection',
 					id: 'connection',
 					choices: this.choices.presenters,
-					default: this.choices.presenters[0]?.id,
+					default: this.choices.presenters?.[0]?.id,
 				},
 				{
 					type: 'dropdown',
 					label: 'Device',
 					id: 'device',
 					choices: this.choices.ndiSources,
-					default: this.choices.ndiSources[0]?.id,
+					default: this.choices.ndiSources?.[0]?.id,
 				},
 				{
 					type: 'dropdown',
