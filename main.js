@@ -502,6 +502,9 @@ class BirdDogCloudInstance extends InstanceBase {
 					let videoSources = connection?.parameters?.videoSources
 
 					if (firstSource) {
+						if (typeof firstSource === 'object') {
+							firstSource = firstSource.displayName ? firstSource.displayName : ''
+						}
 						let index = this.choices.presentersSources.findIndex((el) => el.id === firstSource)
 						if (index === -1) {
 							this.choices.presentersSources.push({ id: firstSource, label: firstSource })
