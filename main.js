@@ -687,12 +687,16 @@ class BirdDogCloudInstance extends InstanceBase {
 					this.states.presenters[connectionId].layout = 'setFullscreenMain'
 				} else {
 					this.states.presenters[connectionId].layout = 'setFullscreenVideo'
+					this.states.presenters[connectionId].fullscreenSource = source
 				}
+				this.checkFeedbacks('presenterLayout', 'presenterSource')
 				this.checkFeedbacks('presenterLayout')
 				break
 			case 'setMixed':
+				let mixedSource = message.data.sourceName
 				this.states.presenters[connectionId].layout = 'setMixed'
-				this.checkFeedbacks('presenterLayout')
+				this.states.presenters[connectionId].mixedSource = mixedSource
+				this.checkFeedbacks('presenterLayout', 'presenterSource')
 				break
 			case 'setAudioReceiver':
 				this.states.presenters[connectionId].audioDevice = message.data.sourceName

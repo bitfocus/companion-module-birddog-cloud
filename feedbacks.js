@@ -23,6 +23,11 @@ export function getFeedbacks() {
 		{ id: 'setMixed', label: 'Mix Sources' },
 	]
 
+	let presenterSourceOptions = [
+		{ id: 'setFullscreenVideo', label: 'Video Source' },
+		{ id: 'setMixed', label: 'Mix Source' },
+	]
+
 	feedbacks['connectionConnected'] = {
 		type: 'boolean',
 		name: 'Connection Connected',
@@ -123,6 +128,53 @@ export function getFeedbacks() {
 		],
 		callback: (feedback) => {
 			return this.states.presenters[feedback.options.connection]?.layout === feedback.options.layout
+		},
+	}
+
+	feedbacks['presenterSource'] = {
+		type: 'boolean',
+		name: 'Presenter Source',
+		description: 'Change style if a Presenter is set to the selected source',
+		defaultStyle: {
+			bgcolor: ColorGreen,
+		},
+		options: [
+			{
+				type: 'dropdown',
+				label: 'Presenter Connection',
+				id: 'connection',
+				choices: this.choices.presenters,
+				default: this.choices.presenters?.[0]?.id,
+			},
+			{
+				type: 'dropdown',
+				label: 'Layout',
+				id: 'layout',
+				choices: presenterSourceOptions,
+				default: 'setFullscreenVideo',
+			},
+			{
+				type: 'dropdown',
+				label: 'Custom Source',
+				id: 'source',
+				choices: this.choices.presentersSources,
+				default: this.choices.presentersSources?.[0]?.id,
+			},
+		],
+		callback: (feedback) => {
+			if (
+				feedback.options.layout === 'setFullscreenVideo' &&
+				this.states.presenters[feedback.options.connection]?.layout === 'setFullscreenVideo'
+			) {
+				return this.states.presenters[feedback.options.connection]?.fullscreenSource === feedback.options.source
+			} else if (
+				feedback.options.layout === 'setMixed' &&
+				this.states.presenters[feedback.options.connection]?.layout === 'setMixed'
+			) {
+				return this.states.presenters[feedback.options.connection]?.mixedSource === feedback.options.source
+			} else {
+				return false
+			}
 		},
 	}
 
