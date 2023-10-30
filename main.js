@@ -22,6 +22,7 @@ class BirdDogCloudInstance extends InstanceBase {
 		this.auth = {} //Socketcluster-specific auth
 		this.states = {} //Channel data from Cloud
 		this.states.presenters = {}
+		this.states.ptzDevice = {}
 		this.choices = {} //Dropdown options for Companion
 
 		//Auth setup for Socketcluster
@@ -405,6 +406,7 @@ class BirdDogCloudInstance extends InstanceBase {
 		this.sendCommand('company/endpoints', 'get')
 		this.sendCommand('connections', 'get')
 		this.sendCommand('company/recorders', 'get')
+		this.sendCommand('encoder-sessions', 'get')
 	}
 
 	processData(cmd, data) {
@@ -424,6 +426,10 @@ class BirdDogCloudInstance extends InstanceBase {
 			case 'recordings':
 				this.states.recordings = data
 				this.setupRecordings()
+				break
+			case 'encoder-sessions':
+				this.states.encoderSessions = data
+				this.setupEncoderSessions()
 				break
 			default:
 				this.log('debug', `Unknown REST data received: ${cmd}`)
@@ -656,6 +662,23 @@ class BirdDogCloudInstance extends InstanceBase {
 			this.setVariableValues({ [`recording_status_${cleanName}`]: newData.isStarted ? 'Recording' : 'Stopped' })
 			this.checkFeedbacks('recordingActive')
 		}
+	}
+
+	setupEncoderSessions() {
+		this.choices.encoderSessions = []
+		this.states.encoderSessions.forEach((session) => {
+			let id = session.id
+			let name = session.parameters?.input?.displayName
+				? session.parameters?.input?.displayName
+				: session.parameters?.output?.displayName
+
+			this.choices.encoderSessions.push({ id: id, label: name })
+		})
+		this.initActions()
+		this.initFeedbacks()
+		this.initPresets()
+		this.initVariables()
+		this.checkFeedbacks()
 	}
 
 	//Presenter Mode

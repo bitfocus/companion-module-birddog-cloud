@@ -47,5 +47,13 @@ export function getVariables() {
 		})
 	}
 
+	variables.push({
+		name: `Presenter - Selected PTZ Device`,
+		variableId: `presenter_ptz_device`,
+	})
+	this.setVariableValues({
+		presenter_ptz_device: this.states.ptzDevice?.sourceName ? this.states.ptzDevice.sourceName : 'None',
+	})
+
 	return variables
 }

@@ -206,6 +206,37 @@ export function getFeedbacks() {
 		},
 	}
 
+	feedbacks['presenterPTZDevice'] = {
+		type: 'boolean',
+		name: 'Presenter PTZ Device',
+		description: 'Change style if a Presenter is set to the selected PTZ device in Companion',
+		defaultStyle: {
+			bgcolor: ColorGreen,
+		},
+		options: [
+			{
+				type: 'dropdown',
+				label: 'Presenter Connection',
+				id: 'connection',
+				choices: this.choices.presenters,
+				default: this.choices.presenters?.[0]?.id,
+			},
+			{
+				type: 'dropdown',
+				label: 'Device',
+				id: 'device',
+				choices: this.choices.ndiSources,
+				default: this.choices.ndiSources?.[0]?.id,
+			},
+		],
+		callback: (feedback) => {
+			return (
+				this.states.ptzDevice.connectionId === feedback.options.connection &&
+				this.states.ptzDevice.sourceName === feedback.options.device
+			)
+		},
+	}
+
 	feedbacks['recordingActive'] = {
 		type: 'boolean',
 		name: 'Recording Active',

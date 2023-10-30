@@ -121,7 +121,7 @@ export function getActions() {
 				let recordings = []
 				let state
 				let recorderSources = this.states.recordings.filter(
-					(recording) => recording.recorderId === action.options.recorder
+					(recording) => recording.recorderId === action.options.recorder,
 				)
 
 				if (recorderSources) {
@@ -254,6 +254,7 @@ export function getActions() {
 					id: 'connection',
 					choices: this.choices.presenters,
 					default: this.choices.presenters?.[0]?.id,
+					isVisible: (options) => !options.local,
 				},
 				{
 					type: 'dropdown',
@@ -261,6 +262,14 @@ export function getActions() {
 					id: 'device',
 					choices: this.choices.ndiSources,
 					default: this.choices.ndiSources?.[0]?.id,
+					isVisible: (options) => !options.local,
+				},
+				{
+					type: 'checkbox',
+					label: 'Use Device Selected via Companion',
+					id: 'local',
+					default: false,
+					tooltip: 'Select the device using the "Presenter - Select PTZ Device" action',
 				},
 				{
 					type: 'dropdown',
@@ -282,12 +291,11 @@ export function getActions() {
 				},
 			],
 			callback: (action) => {
-				let connection = this.states.connections.find(({ id }) => id === action.options.connection)
 				let panVal = 0
 				let tiltVal = 0
 				let zoomVal = 0
 				let speed = action.options.speed
-
+				let body = {}
 				switch (action.options.ptz) {
 					case 'left':
 						panVal = speed
@@ -311,16 +319,58 @@ export function getActions() {
 						break
 				}
 
-				let body = {
-					sourceId: connection.sourceId,
-					connectionId: connection.id,
-					sourceName: action.options.device,
-					pan: panVal,
-					tilt: tiltVal,
-					zoom: zoomVal,
+				if (action.options.local) {
+					body = {
+						sourceId: this.states.ptzDevice.sourceId,
+						connectionId: this.states.ptzDevice.connectionId,
+						sourceName: this.states.ptzDevice.sourceName,
+						pan: panVal,
+						tilt: tiltVal,
+						zoom: zoomVal,
+					}
+				} else {
+					let connection = this.states.connections.find(({ id }) => id === action.options.connection)
+					body = {
+						sourceId: connection.sourceId,
+						connectionId: connection.id,
+						sourceName: action.options.device,
+						pan: panVal,
+						tilt: tiltVal,
+						zoom: zoomVal,
+					}
 				}
 
 				this.sendPresenterCommand('ptz', body)
+			},
+		},
+		presenterPtzDevice: {
+			name: 'Presenter - Select PTZ Device',
+			options: [
+				{
+					type: 'dropdown',
+					label: 'Presenter Connection',
+					id: 'connection',
+					choices: this.choices.presenters,
+					default: this.choices.presenters?.[0]?.id,
+				},
+				{
+					type: 'dropdown',
+					label: 'Device',
+					id: 'device',
+					choices: this.choices.ndiSources,
+					default: this.choices.ndiSources?.[0]?.id,
+				},
+			],
+			callback: (action) => {
+				let connection = this.states.connections.find(({ id }) => id === action.options.connection)
+
+				this.states.ptzDevice = {
+					sourceId: connection.sourceId,
+					connectionId: connection.id,
+					sourceName: action.options.device,
+				}
+				this.checkFeedbacks('presenterPTZDevice')
+				this.setVariableValues({ presenter_ptz_device: action.options.device })
 			},
 		},
 	}
