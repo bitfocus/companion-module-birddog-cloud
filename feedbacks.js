@@ -281,7 +281,7 @@ export function getFeedbacks() {
 		],
 		callback: (feedback) => {
 			let encoderSession = this.states['encoder-sessions']?.find(({ id }) => id === feedback.options.encoderSession)
-			console.log(encoderSession)
+
 			if (encoderSession) {
 				return encoderSession.isStarted
 			} else {

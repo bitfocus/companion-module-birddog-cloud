@@ -596,12 +596,12 @@ array-union@^2.1.0:
   resolved "https://registry.yarnpkg.com/array-union/-/array-union-2.1.0.tgz#b798420adbeb1de828d84acd8a2e23d3efe85e8d"
   integrity sha512-HGyxoOTYUyCM6stUe6EJgnd4EoewAI7zMdfqO+kGjnlZmBDz/cR5pf8r/cR4Wq60sL/p0IkcjUEEPwS3GFrIyw==
 
-async-stream-emitter@^6.0.1:
-  version "6.0.1"
-  resolved "https://registry.yarnpkg.com/async-stream-emitter/-/async-stream-emitter-6.0.1.tgz#cfc87fd941b7b25af7b7e8c6868108957e113aa7"
-  integrity sha512-83l3jwRWnLxicAUWe0soECasl4eLgU2apMl9rdG/Pujng4k4sZyb6+Va1Msx1UUSZjVs9F6eWm1E/REJUbruZg==
+async-stream-emitter@^7.0.1:
+  version "7.0.1"
+  resolved "https://registry.yarnpkg.com/async-stream-emitter/-/async-stream-emitter-7.0.1.tgz#c01832cddcc8f07d8ed528347803ec1517f8886d"
+  integrity sha512-1bgA3iZ80rCBX2LocvsyZPy0QB3/xM+CsXBze2HDHLmshOqx2JlAANGq23djaJ48e9fpcKzTzS1QM0hAKKI0UQ==
   dependencies:
-    stream-demux "^9.0.2"
+    stream-demux "^10.0.1"
 
 author-regex@^1.0.0:
   version "1.0.0"
@@ -1952,20 +1952,20 @@ slash@^4.0.0:
   resolved "https://registry.yarnpkg.com/slash/-/slash-4.0.0.tgz#2422372176c4c6c5addb5e2ada885af984b396a7"
   integrity sha512-3dOsAHXXUkQTpOYcoAxLIorMTp4gIQr5IW3iVb7A7lFIp0VHhnynm9izx6TssdrIcVIESAlVjtnO2K8bg+Coew==
 
-socketcluster-client@^18.3.0:
-  version "18.3.0"
-  resolved "https://registry.yarnpkg.com/socketcluster-client/-/socketcluster-client-18.3.0.tgz#745af3442e56ab9fd79a26cca2105d267fcfb5be"
-  integrity sha512-C56cxxzv9Un+nGcwV5fMxUeojbWJp2FzPk00lh6mZMLh5wsfvHYzqYqQtoaL7JvMliNsx/8UYH4bIQn+YRWtSw==
+socketcluster-client@^19.1.0:
+  version "19.1.0"
+  resolved "https://registry.yarnpkg.com/socketcluster-client/-/socketcluster-client-19.1.0.tgz#9c5d3e6ca31f0f0a2fdd53e707e32a79a42b8a53"
+  integrity sha512-N7bkQfLuOtlAVkotSs9MqmYV2ku7My4GmjFvyLpuv8SbYOe34RXPRcshIOOzKPf8Rs1VUw08podFDXNJ8Doudg==
   dependencies:
     ag-channel "^5.0.0"
     ag-request "^1.0.1"
-    async-stream-emitter "^6.0.1"
+    async-stream-emitter "^7.0.1"
     buffer "^5.2.1"
     clone-deep "^4.0.1"
     linked-list "^2.1.0"
     sc-errors "^2.0.3"
     sc-formatter "^4.0.0"
-    stream-demux "^9.0.2"
+    stream-demux "^10.0.1"
     uuid "^8.3.2"
     vinyl-buffer "^1.0.1"
     ws "^8.9.0"
@@ -1997,13 +1997,13 @@ stream-combiner@~0.0.4:
   dependencies:
     duplexer "~0.1.1"
 
-stream-demux@^9.0.2:
-  version "9.0.2"
-  resolved "https://registry.yarnpkg.com/stream-demux/-/stream-demux-9.0.2.tgz#947425cb3fafa3334a06df0801eaddfdd2250bee"
-  integrity sha512-39X+Jf+HDCYIy/FUcsmFq/CrFhRAa+r3OAHyPFzD2VwfRiDKGcuOvOGstKLXipb/6AnY5bqoc4H2Z5fHq+dAyg==
+stream-demux@^10.0.1:
+  version "10.0.1"
+  resolved "https://registry.yarnpkg.com/stream-demux/-/stream-demux-10.0.1.tgz#204b65fb8973c87cea65119e99622405b3dbcc10"
+  integrity sha512-QjTYLJWpZxZ6uL5R1JzgOzjvao8zDx78ec+uOjHNeVc/9TuasYLldoVrYARZeT1xI1hFYuiKf13IM8b4wamhHg==
   dependencies:
     consumable-stream "^3.0.0"
-    writable-consumable-stream "^4.0.1"
+    writable-consumable-stream "^4.1.0"
 
 string_decoder@~1.1.1:
   version "1.1.1"
@@ -2277,10 +2277,10 @@ wrappy@1:
   resolved "https://registry.yarnpkg.com/wrappy/-/wrappy-1.0.2.tgz#b5243d8f3ec1aa35f1364605bc0d1036e30ab69f"
   integrity sha512-l4Sp/DRseor9wL6EvV2+TuQn63dMkPjZ/sp9XkghTEbV9KlPS1xUsZ3u7/IQO4wxtcFB4bgpQPRcR3QCvezPcQ==
 
-writable-consumable-stream@^4.0.1:
-  version "4.0.1"
-  resolved "https://registry.yarnpkg.com/writable-consumable-stream/-/writable-consumable-stream-4.0.1.tgz#5137a6cbc8fabf0963ac2339bb27e047c35fd933"
-  integrity sha512-iFGcPiaENb4MjN12seViXs5hxuzqdac6Q+HkrZFHJDzw7pezyCsT1nw1h0W2OIu381xn1NAIvBllEGRtpuDuFw==
+writable-consumable-stream@^4.1.0:
+  version "4.1.0"
+  resolved "https://registry.yarnpkg.com/writable-consumable-stream/-/writable-consumable-stream-4.1.0.tgz#e677076f91499159361d7917dce379cad624b344"
+  integrity sha512-4cjCPd4Ayfbix0qqPCzMbnPPZKRh/cKeNCj05unybP3/sRkRAOxh7rSwbhxs3YB6G4/Z2p/2FRBEIQcTeB4jyw==
   dependencies:
     consumable-stream "^3.0.0"
 

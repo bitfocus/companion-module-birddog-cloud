@@ -248,7 +248,7 @@ class BirdDogCloudInstance extends InstanceBase {
 				}
 			})
 			.catch((error) => {
-				console.log(error)
+				//console.log(error)
 				this.log('debug', error)
 			})
 	}
@@ -293,7 +293,7 @@ class BirdDogCloudInstance extends InstanceBase {
 				}
 			})
 			.catch((error) => {
-				console.log(error)
+				//console.log(error)
 				this.log('debug', error)
 				this.updateStatus(InstanceStatus.ConnectionFailure)
 			})
@@ -488,7 +488,7 @@ class BirdDogCloudInstance extends InstanceBase {
 					}
 				})
 				.catch((error) => {
-					console.log(error)
+					//console.log(error)
 					this.log('debug', error)
 				})
 		}
@@ -776,10 +776,17 @@ class BirdDogCloudInstance extends InstanceBase {
 				this.checkFeedbacks('presenterAudioDevice')
 				break
 			case 'ptz':
-				//console.log(message)
+				if (!this.states.ptzDevice.sourceId) {
+					let connection = this.states.connections.find(({ id }) => id === connectionId)
+					this.states.ptzDevice = {
+						sourceId: connection?.sourceId,
+						connectionId: connectionId,
+						sourceName: message.data.sourceName,
+					}
+				}
 				break
 			default:
-				console.log(`Unknown channel message type: ${type}`)
+				//console.log(`Unknown channel message type: ${type}`)
 				//console.log(message)
 				break
 		}
