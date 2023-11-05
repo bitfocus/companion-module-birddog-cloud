@@ -121,7 +121,7 @@ export function getActions() {
 				let recordings = []
 				let state
 				let recorderSources = this.states.recordings.filter(
-					(recording) => recording.recorderId === action.options.recorder,
+					(recording) => recording.recorderId === action.options.recorder
 				)
 
 				if (recorderSources) {
@@ -146,6 +146,34 @@ export function getActions() {
 						action: state,
 					})
 				}
+			},
+		},
+		encoderSessionControl: {
+			name: 'Start/Stop Encode/Decode',
+			options: [
+				{
+					type: 'dropdown',
+					label: 'Encode/Decode',
+					id: 'encoderSession',
+					choices: this.choices.encoderSessions,
+					default: this.choices.encoderSessions?.[0]?.id,
+				},
+				{
+					type: 'dropdown',
+					label: 'Action',
+					id: 'command',
+					choices: [
+						{ id: 'START', label: 'Start' },
+						{ id: 'STOP', label: 'Stop' },
+					],
+					default: 'START',
+				},
+			],
+			callback: (action) => {
+				this.sendCommand(`encoder-session/action`, 'POST', {
+					id: action.options.encoderSession,
+					action: action.options.command,
+				})
 			},
 		},
 		presenterLayout: {

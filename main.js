@@ -211,6 +211,12 @@ class BirdDogCloudInstance extends InstanceBase {
 				this.processChannelUpdate(message.msg, 'recordings', message)
 			}
 		})()
+		;(async () => {
+			let channel = this.socket.subscribe(`/encoder-sessions/${this.cloud.companyId}`, { batch: true })
+			for await (let message of channel) {
+				this.processChannelUpdate(message.msg, 'encoder-sessions', message)
+			}
+		})()
 	}
 
 	//Authentication Requests
@@ -375,6 +381,9 @@ class BirdDogCloudInstance extends InstanceBase {
 			case 'recordings':
 				this.setupRecordings()
 				break
+			case 'encoder-sessions':
+				this.setupEncoderSessions()
+				break
 			default:
 				this.log('debug', `Unknown setup channel: ${channel}`)
 				break
@@ -395,6 +404,9 @@ class BirdDogCloudInstance extends InstanceBase {
 			case 'recordings':
 				this.updateRecordings(data)
 				break
+			case 'encoder-sessions':
+				this.updateEncoderSessions(data)
+				break
 			default:
 				this.log('debug', `Unknown sync channel: ${channel}`)
 				break
@@ -406,7 +418,7 @@ class BirdDogCloudInstance extends InstanceBase {
 		this.sendCommand('company/endpoints', 'get')
 		this.sendCommand('connections', 'get')
 		this.sendCommand('company/recorders', 'get')
-		this.sendCommand('encoder-sessions', 'get')
+		this.sendCommand('company/encoders', 'get')
 	}
 
 	processData(cmd, data) {
@@ -427,8 +439,12 @@ class BirdDogCloudInstance extends InstanceBase {
 				this.states.recordings = data
 				this.setupRecordings()
 				break
+			case 'company/encoders':
+				this.states.encoders = data
+				this.setupEncoders()
+				break
 			case 'encoder-sessions':
-				this.states.encoderSessions = data
+				this.states['encoder-sessions'] = data
 				this.setupEncoderSessions()
 				break
 			default:
@@ -664,21 +680,53 @@ class BirdDogCloudInstance extends InstanceBase {
 		}
 	}
 
+	setupEncoders() {
+		this.choices.encoders = []
+		this.states.encoders.forEach((encoder) => {
+			let id = encoder.id
+			let name = encoder.name
+
+			this.choices.encoders.push({ id: id, label: name })
+		})
+		//After recorders are set, get recording info
+		this.sendCommand('encoder-sessions', 'get')
+	}
+
 	setupEncoderSessions() {
 		this.choices.encoderSessions = []
-		this.states.encoderSessions.forEach((session) => {
+		this.states['encoder-sessions'].forEach((session) => {
 			let id = session.id
-			let name = session.parameters?.input?.displayName
-				? session.parameters?.input?.displayName
-				: session.parameters?.output?.displayName
+			let name = session.id
+			let type = session.type === 'CAPTURE' ? 'encode' : 'decode'
+			if (type === 'encode') {
+				name = `${session.parameters?.input?.displayName} --> ${session.parameters?.output}`
+			} else if (type === 'decode') {
+				name = `${session.parameters?.input} --> ${session.parameters?.output?.displayName}`
+			}
 
-			this.choices.encoderSessions.push({ id: id, label: name })
+			this.choices.encoderSessions.push({ id: id, label: name, type: type })
 		})
 		this.initActions()
 		this.initFeedbacks()
 		this.initPresets()
 		this.initVariables()
 		this.checkFeedbacks()
+	}
+
+	updateEncoderSessions(data) {
+		let encoderSessionId = data.id
+		let newData = data.data
+
+		if ('isStarted' in newData) {
+			let encoderSession = this.choices.encoderSessions?.find(({ id }) => id === encoderSessionId)
+			let name = encoderSession.label
+			let type = encoderSession.type
+
+			this.setVariableValues({
+				[`${type}_status_${encoderSessionId}`]: newData.isStarted ? 'Started' : 'Stopped',
+			})
+			this.checkFeedbacks('encoderSessionActive')
+		}
 	}
 
 	//Presenter Mode
@@ -727,8 +775,12 @@ class BirdDogCloudInstance extends InstanceBase {
 					: message.data.deviceName
 				this.checkFeedbacks('presenterAudioDevice')
 				break
+			case 'ptz':
+				//console.log(message)
+				break
 			default:
-				//console.log(`Unknown channel message type: ${type}`)
+				console.log(`Unknown channel message type: ${type}`)
+				//console.log(message)
 				break
 		}
 	}

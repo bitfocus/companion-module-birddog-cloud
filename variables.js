@@ -47,6 +47,22 @@ export function getVariables() {
 		})
 	}
 
+	if (this.choices.encoderSessions) {
+		this.choices.encoderSessions.forEach((encoder) => {
+			let name = encoder.label
+			let type = encoder.type
+
+			variables.push({
+				name: `${type === 'encode' ? 'Encode' : 'Decode'} Status - ${name}`,
+				variableId: `${type}_status_${encoder.id}`,
+			})
+			let encoderSession = this.states['encoder-sessions']?.find(({ id }) => id === encoder.id)
+			this.setVariableValues({
+				[`${type}_status_${encoder.id}`]: encoderSession?.isStarted ? 'Started' : 'Stopped',
+			})
+		})
+	}
+
 	variables.push({
 		name: `Presenter - Selected PTZ Device`,
 		variableId: `presenter_ptz_device`,

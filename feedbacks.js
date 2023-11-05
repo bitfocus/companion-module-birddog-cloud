@@ -263,5 +263,32 @@ export function getFeedbacks() {
 		},
 	}
 
+	feedbacks['encoderSessionActive'] = {
+		type: 'boolean',
+		name: 'Encode/Decode Active',
+		description: 'Change style if an encode/decode is active',
+		defaultStyle: {
+			bgcolor: ColorRed,
+		},
+		options: [
+			{
+				type: 'dropdown',
+				label: 'Encode/Decode',
+				id: 'encoderSession',
+				choices: this.choices.encoderSessions,
+				default: this.choices.encoderSessions?.[0]?.id,
+			},
+		],
+		callback: (feedback) => {
+			let encoderSession = this.states['encoder-sessions']?.find(({ id }) => id === feedback.options.encoderSession)
+			console.log(encoderSession)
+			if (encoderSession) {
+				return encoderSession.isStarted
+			} else {
+				return false
+			}
+		},
+	}
+
 	return feedbacks
 }

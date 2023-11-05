@@ -308,6 +308,98 @@ export function getPresets() {
 		})
 	}
 
+	if (this.choices.encoderSessions) {
+		this.choices.encoderSessions.forEach((encoder) => {
+			let id = encoder.id
+			let name = encoder.label
+			let type = encoder.type
+
+			presets[`encoder_session_${id}_start`] = {
+				type: 'button',
+				category: `${type === 'encode' ? 'Encode' : 'Decode'} Actions`,
+				name: `Start ${name}`,
+				options: {},
+				style: {
+					text: `START\\n\\n${name}`,
+					size: '7',
+					color: ColorWhite,
+					bgcolor: ColorBlack,
+				},
+				steps: [
+					{
+						down: [
+							{
+								actionId: 'encoderSessionControl',
+								options: {
+									encoderSession: id,
+									command: 'START',
+								},
+							},
+						],
+						up: [],
+					},
+				],
+				feedbacks: [],
+			}
+			presets[`encoder_session_${id}_stop`] = {
+				type: 'button',
+				category: `${type === 'encode' ? 'Encode' : 'Decode'} Actions`,
+				name: `Stop ${name}`,
+				options: {},
+				style: {
+					text: `STOP\\n\\n${name}`,
+					size: '7',
+					color: ColorWhite,
+					bgcolor: ColorBlack,
+				},
+				steps: [
+					{
+						down: [
+							{
+								actionId: 'encoderSessionControl',
+								options: {
+									encoderSession: id,
+									command: 'STOP',
+								},
+							},
+						],
+						up: [],
+					},
+				],
+				feedbacks: [],
+			}
+			presets[`encoder_session_${id}_status`] = {
+				type: 'button',
+				category: `${type === 'encode' ? 'Encode' : 'Decode'} Status`,
+				name: `Status ${name}`,
+				options: {},
+				style: {
+					text: `${name}\\n\\n$(birddog-cloud:${type}_status_${id})`,
+					size: '7',
+					color: ColorWhite,
+					bgcolor: ColorBlack,
+				},
+				steps: [
+					{
+						down: [],
+						up: [],
+					},
+				],
+				feedbacks: [
+					{
+						feedbackId: 'encoderSessionActive',
+						options: {
+							encoderSession: `${id}`,
+						},
+						style: {
+							bgcolor: ColorGreen,
+						},
+					},
+				],
+			}
+		})
+	}
+
 	if (this.choices.presenters) {
 		presets[`presenter_ptz_up`] = {
 			type: 'button',
